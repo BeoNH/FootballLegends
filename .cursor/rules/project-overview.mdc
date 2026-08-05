@@ -1,0 +1,51 @@
+---
+description: Tổng quan template Cocos Creator và quy ước chung
+alwaysApply: true
+---
+
+# Cocos Creator Template — TypeScript
+
+Template phát triển game web/playable trên **Cocos Creator 3.x** + TypeScript. Clone repo → điền `.cursor/docs/00-GDD.md` và `.cursor/docs/CONTEXT.md` cho project cụ thể.
+
+## Cấu trúc thư mục
+
+| Thư mục | Vai trò | Ai sở hữu |
+|---------|---------|-----------|
+| `scripts/` | Thư viện TypeScript template (common, managers, ui…) | Agent |
+| `assets/scripts/` | Script đang dùng trong Cocos — Human kéo từ `scripts/` | Human (kéo) · Agent (sửa) |
+| `assets/scenes/` | Scene game | Human (Editor) |
+| `assets/prefabs/` | Prefab UI/gameplay | Human (Editor) |
+| `assets/resources/` | Tài nguyên load runtime | Human (Editor) |
+| `.cursor/docs/` | Spec, kiến trúc, glossary | Agent + Human |
+| `.cursor/` | Rules, skills, commands | Template |
+
+## Thư mục không chỉnh sửa
+
+Không tạo hoặc sửa: `library/`, `temp/`, `local/`, `build/`, `profiles/`.
+
+## Engine
+
+- Chỉ API **Cocos Creator 3.x** (`import { ... } from 'cc'`).
+- Không tự bịa API; không chắc → docs engine hoặc hỏi user.
+
+## Rules & skill (tra cứu)
+
+| Nhu cầu | Nguồn |
+|---------|-------|
+| Ranh giới Agent vs Human | `agent-boundary.mdc` |
+| Workflow tính năng | `docs-workflow.mdc` · `.cursor/docs/WORKFLOW.md` |
+| Debug | `cocos-debugging.mdc` |
+| `/checklist-done` | `checklist-done.mdc` · `.cursor/commands/checklist-done.md` |
+| `/new-feature` | `.cursor/commands/new-feature.md` |
+| Checklist TypeScript | `cocos-typescript.mdc` |
+| Inspector + JSDoc | `cocos-inspector-docs.mdc` |
+| Kiểm kê script | `scripts-inventory.mdc` |
+| Chuẩn code Cocos (sâu) | skill `theone-cocos-standards` |
+| Plan feature lớn | skill `cocos-feature-planning` |
+
+## Nguyên tắc làm việc
+
+- Giữ diff nhỏ, khớp convention repo
+- Chỉ commit khi user yêu cầu rõ ràng
+- Trả lời tiếng Việt trừ khi user yêu cầu ngôn ngữ khác
+- **Không** chạy `@lobehub/market-cli`

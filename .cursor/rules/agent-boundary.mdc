@@ -1,0 +1,46 @@
+---
+description: Ranh giới Agent (TypeScript) vs Human (Cocos Editor) — bắt buộc tuân thủ
+alwaysApply: true
+---
+
+# Ranh giới Agent / Human
+
+Template phát triển game Cocos Creator: **Agent viết code**, **Human kiểm soát Editor**.
+
+## Agent ĐƯỢC phép
+
+| Vùng | Ghi chú |
+|------|---------|
+| `scripts/**/*.ts` | Thư viện script template — Agent viết/sửa ở đây |
+| `assets/scripts/**/*.ts` | Script đã kéo vào Cocos — Agent sửa khi file đã có trong project |
+| `.cursor/docs/**` | Spec, module, architecture, changelog, ADR, CONTEXT |
+| `.cursor/commands/**` | Chỉ khi user yêu cầu tạo/sửa command |
+
+## Agent CẤM (trừ khi user yêu cầu rõ ràng)
+
+| Vùng | Lý do |
+|------|-------|
+| `assets/**/*.scene` | Human sở hữu scene graph |
+| `assets/**/*.prefab` | Human sở hữu prefab layout |
+| `assets/**/*.meta` | Editor metadata |
+| Texture, sprite, atlas, animation clip, audio | Asset visual — Human |
+| `library/`, `temp/`, `local/`, `build/`, `profiles/` | Engine generated |
+
+## `@property` — phân công
+
+- **Agent:** khai báo field, `type`, `tooltip`, validate trong `onLoad()` (throw nếu null).
+- **Human:** gán Node/Component/asset trong Inspector theo checklist spec mục *Scene / Prefab*.
+
+Agent **không** giả định reference đã được wire — liệt kê rõ Human cần gán gì sau khi code xong.
+
+## Khi cần scene/prefab/node mới
+
+1. Ghi checklist trong `.cursor/docs/features/Fxxx-*.md` mục **Human (Editor)**.
+2. Cập nhật `.cursor/docs/02-SCENES.md` (bảng scene/prefab ↔ script).
+3. **Không** tạo hoặc sửa file `.scene` / `.prefab`.
+
+## Kết thúc task code
+
+- Liệt kê bước **Play mode** Human cần kiểm tra.
+- **Không** tự kết luận feature hoàn tất — chờ user chạy Play mode rồi `/checklist-done`.
+- Chi tiết verify: rule `checklist-done.mdc`, `.cursor/docs/WORKFLOW.md`.

@@ -1,0 +1,23 @@
+---
+description: Checklist TypeScript Cocos Creator 3.x
+globs: assets/**/*.ts
+alwaysApply: false
+---
+
+# Cocos TypeScript
+
+Chi tiết sâu (nếu có skill): `.cursor/skills/theone-cocos-standards/SKILL.md`
+
+Inspector + JSDoc: rule `cocos-inspector-docs.mdc`.
+
+## Checklist
+
+- Access modifier trên mọi member; `@property` + `readonly` khi không gán lại
+- Validate reference bắt buộc trong `onLoad()`, throw nếu null
+- Event: đăng ký `onEnable()`, hủy `onDisable()`, cleanup `onDestroy()`
+- Lifecycle: `onLoad → start → onEnable → update → onDisable → onDestroy`
+- Không `any`; không comment inline trong method
+- Không cấp phát bộ nhớ mới trong `update()`
+- Một file = một `@ccclass` chính (PascalCase)
+- File/class `PascalCase` · biến/hàm `camelCase` · hằng `UPPER_SNAKE_CASE`
+- `"strict": true` trong `tsconfig.json`; lint pass

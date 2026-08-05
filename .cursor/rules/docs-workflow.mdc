@@ -1,0 +1,42 @@
+---
+description: Luồng Spec → Plan → Implement → Sync docs → Review cho tính năng game
+alwaysApply: true
+---
+
+# Docs & workflow
+
+Chi tiết: `.cursor/docs/WORKFLOW.md` · verify Play mode: `checklist-done.mdc` · `/checklist-done`.
+
+## Trước khi code tính năng
+
+1. Đọc spec `.cursor/docs/features/Fxxx-*.md` (tạo từ `.cursor/docs/features/_template.md` hoặc lệnh `/new-feature`)
+2. Đọc `.cursor/docs/03-ARCHITECTURE.md`, `.cursor/docs/01-MODULES.md`, thuật ngữ trong `.cursor/docs/CONTEXT.md`
+3. **Không implement** nếu spec còn `[TBD]` hoặc thiếu acceptance criteria
+
+## Sau khi implement (Agent)
+
+- `.cursor/docs/01-MODULES.md` — module/script mới hoặc đổi trạng thái
+- `.cursor/docs/02-SCENES.md` — ghi scene/prefab/script cần Human wire (nếu có)
+- `.cursor/docs/04-CHANGELOG.md` — một dòng mỗi thay đổi
+- File spec — cập nhật plan Agent; **chưa** đánh `done` cho đến khi `/checklist-done`
+
+## Phân công Editor vs Agent
+
+| Agent | Human (Editor) |
+|-------|----------------|
+| `assets/scripts/**/*.ts` | Scene, prefab, node tree |
+| Docs spec/module/architecture | Wire `@property`, collider, sprite |
+| Checklist Play mode trong spec | Chạy Play mode, `/checklist-done` |
+
+Hướng dẫn Editor: `.cursor/docs/guides/`.
+
+## Tra cứu nhanh
+
+| Cần biết | File |
+|----------|------|
+| Game design | `.cursor/docs/00-GDD.md` |
+| Module & script | `.cursor/docs/01-MODULES.md` |
+| Scene & prefab | `.cursor/docs/02-SCENES.md` |
+| Event, state, pattern | `.cursor/docs/03-ARCHITECTURE.md` |
+| Thuật ngữ domain | `.cursor/docs/CONTEXT.md` |
+| Quyết định kiến trúc | `.cursor/docs/adr/` |

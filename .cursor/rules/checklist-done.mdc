@@ -1,0 +1,40 @@
+---
+description: Lệnh /checklist-done — verify Play mode trước khi đánh dấu feature done
+alwaysApply: true
+---
+
+# Lệnh xác nhận review — `/checklist-done`
+
+Slash command: `.cursor/commands/checklist-done.md`.
+
+User gửi **`/checklist-done`** (hoặc alias) = đã **Play mode test** và chấp nhận kết quả.
+
+Alias: `/da-kiem-tra-xong` · `/review-done`
+
+## Verification before completion (Agent)
+
+**Trước khi user gọi lệnh này**, Agent **không được** coi feature hoàn tất nếu:
+
+- Chưa liệt kê bước Play mode cụ thể trong spec
+- Còn mục **Human (Editor)** chưa tick trong spec
+- Chưa sync docs bắt buộc (`docs-workflow.mdc`)
+
+**Sau lệnh này**, Agent chạy script — không hỏi lại từng checkbox.
+
+## Agent phải làm
+
+1. Chạy: `npm run review:done -- [Fxxx]` (bỏ `Fxxx` → script tìm feature `in-progress`)
+2. Báo user file nào đã cập nhật
+3. Không tick tay từng checkbox — user đã xác nhận bằng lệnh
+
+Dry-run: `node mark-review-done.mjs --dry-run F001`
+
+## Script cập nhật
+
+| File | Nội dung |
+|------|----------|
+| `.cursor/docs/features/Fxxx-*.md` | Trạng thái → `done`; tick acceptance + plan Human |
+| `.cursor/docs/02-SCENES.md` | Tick checklist Play mode liên quan |
+| `.cursor/docs/04-CHANGELOG.md` | Một dòng review (nếu chưa có) |
+
+Chi tiết: `.cursor/docs/WORKFLOW.md` — mục *Lệnh xác nhận review*.

@@ -1,0 +1,41 @@
+---
+description: Kiểm tra thêm/xóa script — tránh file thừa hoặc đặt sai chỗ
+globs: scripts/**/*.ts
+alwaysApply: false
+---
+
+# Kiểm kê `scripts/`
+
+**Tra cứu:** `.cursor/docs/03-ARCHITECTURE.md`, `.cursor/docs/01-MODULES.md`.
+
+Script template nằm **`scripts/`** (ngoài `assets/`). Human kéo file cần dùng vào `assets/scripts/` trong Cocos Editor.
+
+## Trước khi tạo file mới
+
+1. **Gộp được không?** Logic nhỏ → component/manager liên quan; event chung → file events/types dùng chung theo convention project.
+2. **Đúng loại file?**
+   - **Component** (`@ccclass`, gắn scene/prefab): `ui/`, `i18n/`, `gameplay/` — một class chính/file, tên file = tên class.
+   - **Types / event constants / event bus**: `scripts/common/`.
+   - **Service singleton** (network, asset load): `scripts/managers/`.
+   - **Util thuần** (không `@ccclass`): `scripts/utils/` hoặc subfolder module.
+   - **Không tạo** `Helper.ts`, `Utils.ts`, `Common.ts`, `Manager2.ts`.
+3. **Module mới?** Khớp `.cursor/docs/01-MODULES.md` hoặc spec Fxxx — không thêm script phòng hờ.
+
+## Trước khi giữ / xóa file
+
+File **thừa** khi **cả hai**:
+
+- Không có `import` từ `.ts` khác trong `scripts/` hoặc `assets/`
+- Không gắn scene/prefab (tìm `@ccclass('TênClass')` trong `assets/scenes/`, `assets/**/*.prefab`)
+
+Khi xóa: sync docs theo `docs-workflow.mdc`.
+
+## Anti-pattern
+
+| ❌ Tránh | ✅ Thay bằng |
+|---------|-------------|
+| Nhiều manager cùng vai trò | Một coordinator + component con |
+| Singleton global ngoài scene | Event + `@property` inject |
+| Copy logic giữa component anh em | Base class hoặc util chung |
+| Util có `@ccclass` | Tách component vs util |
+| File 3 dòng dùng một lần | Inline vào caller |

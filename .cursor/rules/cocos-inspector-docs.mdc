@@ -1,0 +1,39 @@
+---
+description: Tooltip Inspector + JSDoc — chuẩn Cocos TypeScript
+globs: assets/**/*.ts
+alwaysApply: false
+---
+
+# Inspector & mô tả module
+
+## `@property`
+
+- Một dòng: `@property({ type?, tooltip: '...' })`
+- Tooltip 2–8 từ; số kèm đơn vị `(s)`, `(px)`, …
+- `type` khi TypeScript không suy ra được (Node, Component, enum)
+- `readonly` khi không gán lại sau `onLoad`
+- Không `@property` cho state runtime nội bộ
+
+```typescript
+@property({ type: Node, tooltip: 'Node mục tiêu' })
+private readonly targetNode: Node | null = null;
+
+@property({ tooltip: 'Thời gian chờ (s)' })
+private delaySeconds = 0.5;
+```
+
+## JSDoc
+
+- Class / util export: JSDoc **một dòng** trên khai báo
+- Method phase, event handler, public API: JSDoc **một dòng** trên method
+- Không JSDoc cho getter/setter trivial, helper private ngắn
+- Không `//` hoặc `/* */` **trong thân** method
+
+```typescript
+/** Điều phối luồng chính của scene. */
+@ccclass('SessionController')
+export class SessionController extends Component {
+
+/** Xử lý va chạm và cập nhật state. */
+private onHit(payload: HitPayload): void {
+```
