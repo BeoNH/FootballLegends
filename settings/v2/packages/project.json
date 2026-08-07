@@ -1,3 +1,27 @@
 {
-  "__version__": "1.0.6"
+  "__version__": "1.0.6",
+  "general": {
+    "designResolution": {
+      "width": 854,
+      "height": 480,
+      "fitHeight": true,
+      "fitWidth": false
+    }
+  },
+  "physics": {
+    "collisionGroups": [
+      {
+        "index": 1,
+        "name": "Ground"
+      },
+      {
+        "index": 2,
+        "name": "Player"
+      },
+      {
+        "index": 3,
+        "name": "Ball"
+      }
+    ]
+  }
 }
