@@ -19,5 +19,20 @@ Inspector + JSDoc: rule `cocos-inspector-docs.mdc`.
 - Không `any`; không comment inline trong method
 - Không cấp phát bộ nhớ mới trong `update()`
 - Một file = một `@ccclass` chính (PascalCase)
-- File/class `PascalCase` · biến/hàm `camelCase` · hằng `UPPER_SNAKE_CASE`
+- **Không** tách file/module mới cho helper vài dòng hoặc logic đơn giản — giữ inline trong file đang sửa; tách khi logic phức tạp hoặc dùng lại ≥2 nơi
 - `"strict": true` trong `tsconfig.json`; lint pass
+
+## Đặt tên
+
+| Loại | Quy ước | Ví dụ |
+|------|---------|-------|
+| File / class | PascalCase | `PlayerController.ts` |
+| Hàm / biến / field | camelCase | `moveIntent`, `jumpsUsed` |
+| Hằng | UPPER_SNAKE_CASE | `PLAYER_MOVE` |
+
+- **Không** prefix `_` cho field/member — dùng access modifier (`private`, `readonly`) + camelCase.
+  - ❌ `private _moveAxis`
+  - ✅ `private moveIntent`
+- Field private + public getter trùng ý nghĩa: field ngắn gọn, getter mô tả API (vd. `state` + `get playerState()`).
+- Param callback/handler không dùng: bỏ tên nếu được, hoặc `void tênParam` — không dùng pattern `_tenBien`.
+- Physics collision group: lọc theo **tên** (`physics.PhysicsGroup.Ground`) — không hard-code số `2` hay `1 << index`.

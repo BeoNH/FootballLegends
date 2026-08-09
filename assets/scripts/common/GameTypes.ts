@@ -12,7 +12,7 @@ export enum Side {
 }
 
 /** State machine hành vi cầu thủ (F001: Idle / Run / Jump). */
-export enum PlayerState {
+export enum IState {
     Idle = 'Idle',
     Run = 'Run',
     Jump = 'Jump',

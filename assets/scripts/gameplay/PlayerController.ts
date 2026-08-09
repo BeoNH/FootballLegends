@@ -1,21 +1,23 @@
 import {
     _decorator,
+    BoxCollider2D,
     Collider2D,
     Component,
     Contact2DType,
     IPhysics2DContact,
     Input,
     KeyCode,
+    PhysicsSystem2D,
     RigidBody2D,
     Vec2,
     input,
 } from 'cc';
-import { PlayerState } from '../common/GameTypes';
+import { IState } from '../common/GameTypes';
 
 const { ccclass, property } = _decorator;
 
-const PLAYER_MOVE = 370;
-const PLAYER_JUMP_Y = 600;
+const PLAYER_MOVE = 10;
+const PLAYER_JUMP_Y = 10;
 const MAX_JUMPS = 2;
 
 /** Điều khiển cầu thủ: di chuyển ngang + nhảy tối đa 2 lần (F001). */
@@ -27,35 +29,20 @@ export class PlayerController extends Component {
     @property({ type: Collider2D, tooltip: 'FootSensor phát hiện chạm đất' })
     private readonly footSensor: Collider2D | null = null;
 
-    private readonly _velocity = new Vec2();
+    private readonly velocity = new Vec2();
+    private bodyCollider: BoxCollider2D | null = null;
+    private groundContacts = 0;
+    private leftHeld = false;
+    private rightHeld = false;
+    private jumpQueued = false;
+    private jumpsUsed = 0;
 
-    private _moveAxis = 0;
-    private _leftHeld = false;
-    private _rightHeld = false;
-    private _jumpQueued = false;
-    private _groundContactCount = 0;
-    private _jumpsRemaining = MAX_JUMPS;
-    private _playerState: PlayerState = PlayerState.Idle;
-    private _facingSign = 1;
-
-    public get playerState(): PlayerState {
-        return this._playerState;
-    }
+    public moveAxis = 0;
+    public facing = 1;
+    public playerState: IState = IState.Idle;
 
     public get isGrounded(): boolean {
-        return this._groundContactCount > 0;
-    }
-
-    public get moveAxis(): number {
-        return this._moveAxis;
-    }
-
-    public get facing(): number {
-        return this._facingSign;
-    }
-
-    public get jumpsRemaining(): number {
-        return this._jumpsRemaining;
+        return this.groundContacts > 0;
     }
 
     protected onLoad(): void {
@@ -65,51 +52,63 @@ export class PlayerController extends Component {
         if (this.footSensor == null) {
             throw new Error('[PlayerController] footSensor is required');
         }
+        this.bodyCollider = this.getComponent(BoxCollider2D);
     }
 
     protected onEnable(): void {
         input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
-        if (this.footSensor != null) {
-            this.footSensor.on(Contact2DType.BEGIN_CONTACT, this.onFootBeginContact, this);
-            this.footSensor.on(Contact2DType.END_CONTACT, this.onFootEndContact, this);
+        this.bindGroundContacts(this.footSensor!);
+        if (this.bodyCollider != null) {
+            this.bindGroundContacts(this.bodyCollider);
         }
+        this.groundContacts = 0;
+        this.jumpsUsed = 0;
+        this.rigidBody!.linearVelocity = this.velocity.set(0, 0);
     }
 
     protected onDisable(): void {
         input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
-        this.footSensor?.off(Contact2DType.BEGIN_CONTACT, this.onFootBeginContact, this);
-        this.footSensor?.off(Contact2DType.END_CONTACT, this.onFootEndContact, this);
-        this._groundContactCount = 0;
-        this._jumpsRemaining = MAX_JUMPS;
+        this.unbindGroundContacts(this.footSensor!);
+        if (this.bodyCollider != null) {
+            this.unbindGroundContacts(this.bodyCollider);
+        }
+        this.groundContacts = 0;
+        this.jumpsUsed = 0;
+        this.leftHeld = false;
+        this.rightHeld = false;
+        this.moveAxis = 0;
     }
 
-    protected update(_deltaTime: number): void {
+    protected update(): void {
         this.applyMoveAndJump();
-        this.refreshPlayerState();
     }
 
-    /** Đặt intent di chuyển ngang: -1 trái, 0 dừng, 1 phải. */
-    public setMoveIntent(axis: number): void {
-        this._moveAxis = axis < 0 ? -1 : axis > 0 ? 1 : 0;
-    }
-
-    /** Yêu cầu nhảy (tối đa MAX_JUMPS lần trước khi chạm đất lại). */
     public requestJump(): void {
-        this._jumpQueued = true;
+        this.jumpQueued = true;
+    }
+
+    private bindGroundContacts(collider: Collider2D): void {
+        collider.on(Contact2DType.BEGIN_CONTACT, this.onGroundBegin, this);
+        collider.on(Contact2DType.END_CONTACT, this.onGroundEnd, this);
+    }
+
+    private unbindGroundContacts(collider: Collider2D): void {
+        collider.off(Contact2DType.BEGIN_CONTACT, this.onGroundBegin, this);
+        collider.off(Contact2DType.END_CONTACT, this.onGroundEnd, this);
     }
 
     private onKeyDown(event: { keyCode: KeyCode }): void {
         switch (event.keyCode) {
             case KeyCode.KEY_A:
             case KeyCode.ARROW_LEFT:
-                this._leftHeld = true;
+                this.leftHeld = true;
                 this.syncMoveIntentFromKeyboard();
                 break;
             case KeyCode.KEY_D:
             case KeyCode.ARROW_RIGHT:
-                this._rightHeld = true;
+                this.rightHeld = true;
                 this.syncMoveIntentFromKeyboard();
                 break;
             case KeyCode.KEY_W:
@@ -125,12 +124,12 @@ export class PlayerController extends Component {
         switch (event.keyCode) {
             case KeyCode.KEY_A:
             case KeyCode.ARROW_LEFT:
-                this._leftHeld = false;
+                this.leftHeld = false;
                 this.syncMoveIntentFromKeyboard();
                 break;
             case KeyCode.KEY_D:
             case KeyCode.ARROW_RIGHT:
-                this._rightHeld = false;
+                this.rightHeld = false;
                 this.syncMoveIntentFromKeyboard();
                 break;
             default:
@@ -139,68 +138,62 @@ export class PlayerController extends Component {
     }
 
     private syncMoveIntentFromKeyboard(): void {
-        if (this._leftHeld && this._rightHeld) {
-            this.setMoveIntent(0);
+        if (this.leftHeld && this.rightHeld) {
+            this.moveAxis = 0;
             return;
         }
-        if (this._leftHeld) {
-            this.setMoveIntent(-1);
+        if (this.leftHeld) {
+            this.moveAxis = -1;
             return;
         }
-        if (this._rightHeld) {
-            this.setMoveIntent(1);
+        if (this.rightHeld) {
+            this.moveAxis = 1;
             return;
         }
-        this.setMoveIntent(0);
+        this.moveAxis = 0;
     }
 
-    private onFootBeginContact(
-        _self: Collider2D,
-        _other: Collider2D,
-        _contact: IPhysics2DContact | null,
-    ): void {
-        const wasAirborne = !this.isGrounded;
-        this._groundContactCount += 1;
-        if (wasAirborne && this.isGrounded) {
-            this._jumpsRemaining = MAX_JUMPS;
+    private onGroundBegin(collider: Collider2D, other: Collider2D, contact: IPhysics2DContact | null): void {
+        if (other.group !== PhysicsSystem2D.PhysicsGroup['Ground']) {
+            return;
+        }
+        const wasAirborne = this.groundContacts === 0;
+        this.groundContacts += 1;
+        if (wasAirborne) {
+            this.jumpsUsed = 0;
         }
     }
 
-    private onFootEndContact(
-        _self: Collider2D,
-        _other: Collider2D,
-        _contact: IPhysics2DContact | null,
-    ): void {
-        this._groundContactCount = Math.max(0, this._groundContactCount - 1);
+    private onGroundEnd(collider: Collider2D, other: Collider2D, contact: IPhysics2DContact | null): void {
+        if (other.group !== PhysicsSystem2D.PhysicsGroup['Ground']) {
+            return;
+        }
+        this.groundContacts = Math.max(0, this.groundContacts - 1);
     }
 
     private applyMoveAndJump(): void {
         const body = this.rigidBody!;
-        body.linearVelocity = this._velocity.set(
-            this._moveAxis * PLAYER_MOVE,
+        body.linearVelocity = this.velocity.set(
+            this.moveAxis * PLAYER_MOVE,
             body.linearVelocity.y,
         );
 
-        if (this._moveAxis !== 0) {
-            this._facingSign = this._moveAxis < 0 ? -1 : 1;
+        if (this.moveAxis !== 0) {
+            this.facing = this.moveAxis;
         }
 
-        if (!this._jumpQueued) {
-            return;
+        if (this.jumpQueued) {
+            this.jumpQueued = false;
+            if (this.jumpsUsed < MAX_JUMPS) {
+                body.linearVelocity = this.velocity.set(body.linearVelocity.x, PLAYER_JUMP_Y);
+                this.jumpsUsed += 1;
+            }
         }
-        this._jumpQueued = false;
-        if (this._jumpsRemaining <= 0) {
-            return;
-        }
-        body.linearVelocity = this._velocity.set(body.linearVelocity.x, PLAYER_JUMP_Y);
-        this._jumpsRemaining -= 1;
-    }
 
-    private refreshPlayerState(): void {
         if (!this.isGrounded) {
-            this._playerState = PlayerState.Jump;
+            this.playerState = IState.Jump;
             return;
         }
-        this._playerState = this._moveAxis !== 0 ? PlayerState.Run : PlayerState.Idle;
+        this.playerState = this.moveAxis !== 0 ? IState.Run : IState.Idle;
     }
 }
