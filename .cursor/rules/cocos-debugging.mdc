@@ -1,64 +1,62 @@
 ---
-description: Debug có hệ thống cho Cocos — reproduce Play mode trước khi sửa
+description: Debug có hệ thống cho Cocos — khi Human báo bug; reproduce theo mô tả Play
 alwaysApply: false
 ---
 
 # Debug Cocos (systematic)
 
-**Nguyên tắc:** Không sửa code cho đến khi hiểu nguyên nhân. Component Cocos verify bằng **Play mode**, không chỉ đọc diff.
+**Model ưu tiên:** Codex (phase Debug) — `multi-model-pipeline` · `game-dev-pipeline`. Fix lớn → Composer.
 
-Adapt từ quy trình systematic-debugging — thay unit test bằng Play mode + Inspector.
+**Nguyên tắc:** Không sửa code đến khi hiểu nguyên nhân. Reproduce theo **mô tả Play của Human** (và log/screenshot họ cung cấp). Agent **không** tự mở Play để “chạy thử” thay bước báo cáo.
 
 ## Khi nào áp dụng
 
-- Bug gameplay, state, timing, lifecycle
-- `@property` null / reference sai sau khi Human wire
+- Human báo bug gameplay, state, timing, lifecycle
+- `@property` null / reference sai sau wire
 - Event leak, listener không cleanup
 - Performance (GC spike, frame drop)
 
 ## Phase 1 — Điều tra (bắt buộc trước khi fix)
 
-1. **Đọc lỗi đầy đủ** — stack trace, dòng TS, tên Component.
-2. **Reproduce trong Play mode** — ghi bước cụ thể; nếu không tái hiện → thu thập thêm, không đoán.
-3. **Kiểm tra thay đổi gần đây** — git diff, spec Fxxx, commit Editor (scene/prefab).
-4. **So sánh spec vs thực tế** — `.cursor/docs/02-SCENES.md`, checklist wire `@property` trong spec.
-5. **Trace lifecycle / event** — onLoad → start → onEnable → update; listener đăng ký/hủy đúng chưa?
+1. **Đọc lỗi đầy đủ** — stack, dòng TS, Component; log Human gửi hoặc MCP `get_recent_logs` nếu hữu ích.
+2. **Reproduce theo bước Human** — ghi lại; thiếu bước → hỏi thêm, không đoán.
+3. **Diagnostics tĩnh** (tuỳ chọn) — `get_script_diagnostic_context` / đọc diff.
+4. **Thay đổi gần đây** — git diff, spec Fxxx, commit Editor.
+5. **Spec vs thực tế** — `02-SCENES.md`, checklist `@property`.
+6. **Lifecycle / event** — onLoad → start → onEnable → update; listener cleanup?
 
 ### Bug đa tầng (script ↔ scene ↔ prefab)
 
-Trước khi sửa TS, xác minh từng ranh giới:
-
-- Script export đúng `@ccclass('TênClass')`?
-- Prefab/scene có gắn đúng component?
-- `@property` đã wire trong Inspector?
-- Node active/enabled đúng thời điểm?
+- `@ccclass` đúng? Prefab/scene gắn đúng component? `@property` đã wire? Node active đúng lúc?
+- Thiếu wire → ghi `H00x`, nhờ Human — không đoán vá TS.
 
 ## Phase 2 — So sánh pattern
 
-1. Tìm component **tương tự đang chạy đúng** trong repo.
-2. Đọc reference trong `theone-cocos-standards` (lifecycle, event).
-3. Liệt kê **mọi** khác biệt — kể cả nhỏ (thứ tự onLoad, tên event).
+1. Component tương tự đang chạy đúng.
+2. Reference `theone-cocos-standards` (lifecycle, event).
+3. Liệt kê mọi khác biệt.
 
 ## Phase 3 — Giả thuyết
 
-1. **Một** giả thuyết rõ: "X là nguyên nhân vì Y".
-2. Thay đổi **tối thiểu** để kiểm tra — không gom nhiều fix.
-3. Human verify Play mode → xác nhận hoặc giả thuyết mới.
+1. Một giả thuyết: "X vì Y".
+2. Thay đổi tối thiểu để kiểm.
+3. Human Play lại → xác nhận hoặc giả thuyết mới.
 
 ## Phase 4 — Sửa
 
-1. Sửa **nguồn** gốc, không vá triệu chứng.
-2. Human Play mode verify.
-3. User `/checklist-done` khi chấp nhận.
+1. Sửa nguồn gốc, không vá triệu chứng.
+2. Human Play xác nhận.
+3. User `/checklist-done` khi chấp nhận feature.
 
 ### Dừng và hỏi Human nếu
 
-- Đã thử ≥ 3 fix không hiệu quả → có thể sai kiến trúc component/event.
-- Bug cần sửa scene/prefab → ghi checklist Human, **không** tự sửa file Editor.
+- ≥ 3 fix không hiệu quả → có thể sai kiến trúc.
+- Cần sửa scene/prefab → checklist Human, không tự sửa Editor.
+- Thiếu bước reproduce rõ.
 
 ## Cờ đỏ — quay lại Phase 1
 
-- "Sửa nhanh rồi test sau"
-- Sửa nhiều file cùng lúc không cô lập nguyên nhân
-- Bỏ qua bước reproduce Play mode
-- Giả định `@property` đã wire mà chưa kiểm tra spec
+- Sửa nhanh rồi nhờ Human test sau mà chưa có giả thuyết
+- Sửa nhiều file không cô lập nguyên nhân
+- Giả định `@property` đã wire
+- Tự chạy Play MCP thay vì dựa báo cáo Human

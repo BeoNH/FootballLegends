@@ -32,6 +32,7 @@ Không tạo hoặc sửa: `library/`, `temp/`, `local/`, `build/`, `profiles/`.
 
 | Nhu cầu | Nguồn |
 |---------|-------|
+| Pipeline đa model (Claude→Composer→Codex review; debug khi Human báo) | `multi-model-pipeline.mdc` · skill `game-dev-pipeline` |
 | Ranh giới Agent vs Human | `agent-boundary.mdc` |
 | Workflow tính năng | `docs-workflow.mdc` · `.cursor/docs/WORKFLOW.md` |
 | Debug | `cocos-debugging.mdc` |

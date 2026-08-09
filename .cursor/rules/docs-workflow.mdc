@@ -1,32 +1,31 @@
 ---
-description: Luồng Spec → Plan → Implement → Sync docs → Review cho tính năng game
+description: Luồng Spec → Plan → Implement → Sync docs → Review code → Human Play
 alwaysApply: true
 ---
 
 # Docs & workflow
 
-Chi tiết: `.cursor/docs/WORKFLOW.md` · verify Play mode: `checklist-done.mdc` · `/checklist-done`.
+Chi tiết: `.cursor/docs/WORKFLOW.md` · verify: Human Play → `/checklist-done`.  
+Pipeline: `multi-model-pipeline.mdc` · skill `game-dev-pipeline` (Claude → Composer → Codex Review → Human; Debug khi Human báo).
 
 ## Trước khi code tính năng
 
-1. Đọc spec `.cursor/docs/features/Fxxx-*.md` (tạo từ `.cursor/docs/features/_template.md` hoặc lệnh `/new-feature`)
-2. Đọc `.cursor/docs/03-ARCHITECTURE.md`, `.cursor/docs/01-MODULES.md`, thuật ngữ trong `.cursor/docs/CONTEXT.md`
-3. **Không implement** nếu spec còn `[TBD]` hoặc thiếu acceptance criteria
+1. Phase **Plan (Claude)** — spec `.cursor/docs/features/Fxxx-*.md` hoặc `/new-feature`
+2. Đọc `.cursor/docs/03-ARCHITECTURE.md`, `.cursor/docs/01-MODULES.md`, `.cursor/docs/CONTEXT.md`
+3. **Không implement** nếu còn `[TBD]` / thiếu acceptance — Build sau handoff Composer
 
-## Sau khi implement (Agent)
+## Sau khi implement (Composer / Build)
 
-- `.cursor/docs/01-MODULES.md` — module/script mới hoặc đổi trạng thái
-- `.cursor/docs/02-SCENES.md` — ghi scene/prefab/script cần Human wire (nếu có)
-- `.cursor/docs/04-CHANGELOG.md` — một dòng mỗi thay đổi
-- File spec — cập nhật plan Agent; **chưa** đánh `done` cho đến khi `/checklist-done`
+- Sync `01-MODULES`, `02-SCENES`, `04-CHANGELOG`; spec giữ `in-progress`
+- Handoff **Review (Codex)** — soi code; rồi Human Play (Agent **không** tự chạy thử game)
 
 ## Phân công Editor vs Agent
 
-| Agent | Human (Editor) |
-|-------|----------------|
+| Agent | Human |
+|-------|-------|
 | `assets/scripts/**/*.ts` | Scene, prefab, node tree |
 | Docs spec/module/architecture | Wire `@property`, collider, sprite |
-| Checklist Play mode trong spec | Chạy Play mode, `/checklist-done` |
+| Review code; debug khi Human báo bug | Play mode + `/checklist-done` |
 
 Hướng dẫn Editor: `.cursor/docs/guides/`.
 
@@ -40,3 +39,4 @@ Hướng dẫn Editor: `.cursor/docs/guides/`.
 | Event, state, pattern | `.cursor/docs/03-ARCHITECTURE.md` |
 | Thuật ngữ domain | `.cursor/docs/CONTEXT.md` |
 | Quyết định kiến trúc | `.cursor/docs/adr/` |
+| Pipeline đa model | `multi-model-pipeline.mdc` · skill `game-dev-pipeline` |

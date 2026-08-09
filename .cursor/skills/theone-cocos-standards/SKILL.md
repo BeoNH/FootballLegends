@@ -1,6 +1,10 @@
 ---
 name: theone-cocos-standards
-description: Áp dụng chuẩn phát triển Cocos Creator của TheOne Studio — pattern TypeScript, kiến trúc Component/EventDispatcher Cocos Creator 3.x, tối ưu playable ads. Dùng khi viết, sửa, review code TypeScript Cocos, triển khai playable, tối ưu performance/kích thước bundle, hoặc review thay đổi code.
+description: >-
+  Áp dụng chuẩn phát triển Cocos Creator của TheOne Studio — pattern TypeScript,
+  kiến trúc Component/EventDispatcher Cocos Creator 3.x, tối ưu playable ads.
+  Dùng khi viết/sửa/review code TypeScript Cocos (phase Build Composer hoặc
+  Review Codex), triển khai playable, tối ưu performance/bundle.
 ---
 
 # Chuẩn phát triển Cocos Creator — TheOne Studio

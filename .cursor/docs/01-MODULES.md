@@ -27,7 +27,7 @@ Script nằm trong **`scripts/`** (ngoài `assets/`). Human kéo/copy file cần
 
 | File | Module | Loại | Mô tả |
 |------|--------|------|-------|
-| `common/GameTypes.ts` | common | types | Enum `GameState`, interface `IGameInfo` |
+| `common/GameTypes.ts` | common | types | Enum `GameState`, `Side`, `PlayerState`; interface `IGameInfo` |
 | `common/GameEvents.ts` | common | constants | Hằng số tên event |
 | `common/BroadcastReceiver.ts` | common | event bus | Pub/sub static |
 | `managers/AssetLoader.ts` | managers | service | Load + cache asset |
@@ -40,7 +40,7 @@ Script nằm trong **`scripts/`** (ngoài `assets/`). Human kéo/copy file cần
 |------|--------|------|-------|------------|------------|
 | `gameplay/MatchController.ts` | gameplay | component | Vòng đời trận, timer, goal, OT, kickoff | `FootballGameCore` | planned |
 | `gameplay/MatchData.ts` | gameplay | data | `score1`, `score2`, `energies[]` | `MatchData` | planned |
-| `gameplay/PlayerController.ts` | gameplay | component | Move / jump / shoot (F001); tackle/super sau | `PlayerObject` + input | in-progress (F001) |
+| `gameplay/PlayerController.ts` | gameplay | component | Move 2 bên + double jump (`MAX_JUMPS=2`); intent `setMoveIntent` / `requestJump` (F001); shoot/tackle/super sau | `PlayerObject` + input | in-progress (F001) |
 | `gameplay/AiController.ts` | gameplay | component | Bot 1v1, strategy theo tỉ số | `AIController2` | planned |
 | `gameplay/BallController.ts` | gameplay | component | Bóng, shoot, bounce, superHit | `BallObject` | planned |
 | `gameplay/SuperAbility.ts` | gameplay | component | Fireball / Teleport logic | `PlayerObject.superShot`, `Teleport` | planned |

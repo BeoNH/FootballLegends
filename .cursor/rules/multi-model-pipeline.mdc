@@ -1,0 +1,45 @@
+---
+description: Quy trình đa model khép kín — Claude plan, Composer build, Codex review code; debug khi Human báo
+alwaysApply: true
+---
+
+# Multi-model pipeline (khép kín)
+
+Phát triển game theo vòng lặp cố định. **Không** trộn vai trò trong một lượt trừ khi user chỉ định rõ.
+
+## Vai trò model
+
+| Phase | Model ưu tiên | Task slug (subagent) | Làm | Không làm |
+|-------|---------------|----------------------|-----|-----------|
+| **Plan** | Claude (Opus/Sonnet thinking) | `claude-opus-5-thinking-high` / `claude-sonnet-5-thinking-high` | Spec, grill, chia task, ADR, điều hướng | Viết/sửa TS hàng loạt |
+| **Build** | Composer | `composer-2.5` | Implement TS, sync docs theo plan | Đổi kiến trúc ngoài plan |
+| **Review** | Codex | `gpt-5.3-codex` | Review diff / code; diagnostics tĩnh nếu hữu ích | Tự chạy Play/gameplay assert; rewrite feature; `/checklist-done` |
+| **Debug** | Codex | `gpt-5.3-codex` | Chỉ khi **Human báo bug** — soi code + fix tối thiểu | Tự mở Play để “chạy thử” thay Human |
+| **Human** | — | — | Wire Editor; **Play mode test**; `/checklist-done` | — |
+
+Chi tiết: skill `game-dev-pipeline`. Plan lớn: `cocos-feature-planning`. Debug: `cocos-debugging.mdc`.
+
+## Vòng lặp
+
+```
+/new-feature · Plan(Claude) → Build(Composer) → Review(Codex)
+       ↑                         ↓ Critical
+       │                    Debug/Build (lặp)
+       │                         ↓ OK
+       └──────── Human (Editor + Play) → /checklist-done
+                    ↓ báo bug
+              Debug(Codex) → Build nếu cần → Human Play lại
+```
+
+1. **Plan** → handoff task Build — chưa code trừ user yêu cầu.
+2. **Build** → diff + docs; handoff Review code.
+3. **Review** → findings (Critical → trả Build). **Không** bắt buộc Agent chạy Play/gameplay.
+4. **Human** → wire + Play acceptance → `/checklist-done`.
+5. **Debug** chỉ khi Human mô tả bug / bước reproduce.
+
+## Hành vi agent
+
+- Khớp phase (`plan` / `implement` / `review` / `debug`). Sai model → báo đổi model hoặc Task đúng slug.
+- **Cấm** coi “Agent tự Play MCP” là gate trước Human. MCP (diagnostics, log, inspect) chỉ dùng hỗ trợ **review code** hoặc **debug theo báo cáo Human**.
+- Subagent: `model` đúng bảng; prompt đủ Fxxx + context bug (nếu debug).
+- Ranh giới Editor: `agent-boundary.mdc`.

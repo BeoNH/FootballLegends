@@ -1,11 +1,13 @@
 ---
 name: cocos-feature-planning
-description: Chia plan chi tiết cho feature lớn Cocos — task Agent vs Human, dùng trước khi implement multi-session
+description: Chia plan chi tiết cho feature lớn Cocos — task Agent vs Human, dùng trước khi implement multi-session. Phase Plan trong pipeline Claude → Composer → Codex.
 ---
 
 # Plan feature lớn (Cocos)
 
 Dùng khi feature **>1 session agent** hoặc chạm nhiều module/scene.
+
+**Model:** Claude (phase Plan). Sau khi chốt plan → handoff Composer theo skill `game-dev-pipeline`. Mỗi task Agent ghi verify **Human Play**. Không implement hàng loạt tại đây.
 
 Không thay `docs-workflow.mdc` — bổ sung bước plan trước implement.
 

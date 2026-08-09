@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Ranh giới Agent / Human
 
-Template phát triển game Cocos Creator: **Agent viết code**, **Human kiểm soát Editor**.
+Template phát triển game Cocos Creator: **Agent viết code**, **Human kiểm soát Editor + Play**.
 
 ## Agent ĐƯỢC phép
 
@@ -15,6 +15,7 @@ Template phát triển game Cocos Creator: **Agent viết code**, **Human kiểm
 | `assets/scripts/**/*.ts` | Script đã kéo vào Cocos — Agent sửa khi file đã có trong project |
 | `.cursor/docs/**` | Spec, module, architecture, changelog, ADR, CONTEXT |
 | `.cursor/commands/**` | Chỉ khi user yêu cầu tạo/sửa command |
+| MCP hỗ trợ (tuỳ chọn) | Diagnostics / log / inspect khi **review code** hoặc **debug theo báo cáo Human** — không dùng để tự Play thử game thay Human |
 
 ## Agent CẤM (trừ khi user yêu cầu rõ ràng)
 
@@ -31,7 +32,7 @@ Template phát triển game Cocos Creator: **Agent viết code**, **Human kiểm
 - **Agent:** khai báo field, `type`, `tooltip`, validate trong `onLoad()` (throw nếu null).
 - **Human:** gán Node/Component/asset trong Inspector theo checklist spec mục *Scene / Prefab*.
 
-Agent **không** giả định reference đã được wire — liệt kê rõ Human cần gán gì sau khi code xong.
+Agent **không** giả định reference đã được wire — liệt kê rõ Human cần gán gì (`H00x`).
 
 ## Khi cần scene/prefab/node mới
 
@@ -41,6 +42,7 @@ Agent **không** giả định reference đã được wire — liệt kê rõ H
 
 ## Kết thúc task code
 
-- Liệt kê bước **Play mode** Human cần kiểm tra.
-- **Không** tự kết luận feature hoàn tất — chờ user chạy Play mode rồi `/checklist-done`.
-- Chi tiết verify: rule `checklist-done.mdc`, `.cursor/docs/WORKFLOW.md`.
+1. Review code (Codex) + checklist **Play mode cho Human**.
+2. Human Play → `/checklist-done`. Agent **không** tự đánh `done`.
+3. Bug khi chơi → Human báo → Codex Debug.
+4. Chi tiết: `multi-model-pipeline.mdc`, `checklist-done.mdc`, `.cursor/docs/WORKFLOW.md`.

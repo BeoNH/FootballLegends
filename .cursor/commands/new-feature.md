@@ -5,6 +5,8 @@ description: Tạo spec feature Fxxx — hỏi làm rõ trước khi code (grill
 
 Tạo hoặc làm rõ spec feature mới. **Không viết code** trong bước này trừ khi user yêu cầu.
 
+**Model:** Claude (phase Plan). Pipeline: skill `game-dev-pipeline` · rule `multi-model-pipeline`. Xong spec → handoff Build (Composer), không nhảy sang implement trừ khi user yêu cầu.
+
 ## Input
 
 User cung cấp (hoặc hỏi nếu thiếu):

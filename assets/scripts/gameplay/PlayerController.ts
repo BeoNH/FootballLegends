@@ -1,17 +1,24 @@
-import { _decorator, Collider2D, Component, Contact2DType, IPhysics2DContact, Input, KeyCode, RigidBody2D, Vec2, input, } from 'cc';
+import {
+    _decorator,
+    Collider2D,
+    Component,
+    Contact2DType,
+    IPhysics2DContact,
+    Input,
+    KeyCode,
+    RigidBody2D,
+    Vec2,
+    input,
+} from 'cc';
 import { PlayerState } from '../common/GameTypes';
 
 const { ccclass, property } = _decorator;
 
 const PLAYER_MOVE = 370;
 const PLAYER_JUMP_Y = 600;
-const BALL_SHOT_X = 550;
-const BALL_SHOT_Y = 220;
-const SHOOT_DISTANCE_X = 80;
-const SHOOT_DISTANCE_Y = 80;
-const SHOOT_COOLDOWN = 0.5;
+const MAX_JUMPS = 2;
 
-/** Điều khiển cầu thủ: di chuyển, nhảy, sút (F001). */
+/** Điều khiển cầu thủ: di chuyển ngang + nhảy tối đa 2 lần (F001). */
 @ccclass('PlayerController')
 export class PlayerController extends Component {
     @property({ type: RigidBody2D, tooltip: 'RigidBody2D Dynamic của Player' })
@@ -20,22 +27,16 @@ export class PlayerController extends Component {
     @property({ type: Collider2D, tooltip: 'FootSensor phát hiện chạm đất' })
     private readonly footSensor: Collider2D | null = null;
 
-    @property({ type: RigidBody2D, tooltip: 'RigidBody2D của bóng' })
-    private readonly ballBody: RigidBody2D | null = null;
-
-    @property({ tooltip: 'Hướng mặt: -1 trái, 1 phải' })
-    private facingSign = 1;
-
     private readonly _velocity = new Vec2();
-    private readonly _ballOffset = new Vec2();
-    private readonly _shotVelocity = new Vec2();
 
     private _moveAxis = 0;
+    private _leftHeld = false;
+    private _rightHeld = false;
     private _jumpQueued = false;
-    private _shootQueued = false;
     private _groundContactCount = 0;
-    private _shootCooldownLeft = 0;
+    private _jumpsRemaining = MAX_JUMPS;
     private _playerState: PlayerState = PlayerState.Idle;
+    private _facingSign = 1;
 
     public get playerState(): PlayerState {
         return this._playerState;
@@ -45,6 +46,18 @@ export class PlayerController extends Component {
         return this._groundContactCount > 0;
     }
 
+    public get moveAxis(): number {
+        return this._moveAxis;
+    }
+
+    public get facing(): number {
+        return this._facingSign;
+    }
+
+    public get jumpsRemaining(): number {
+        return this._jumpsRemaining;
+    }
+
     protected onLoad(): void {
         if (this.rigidBody == null) {
             throw new Error('[PlayerController] rigidBody is required');
@@ -52,20 +65,15 @@ export class PlayerController extends Component {
         if (this.footSensor == null) {
             throw new Error('[PlayerController] footSensor is required');
         }
-        if (this.ballBody == null) {
-            throw new Error('[PlayerController] ballBody is required');
-        }
-        if (this.facingSign === 0) {
-            throw new Error('[PlayerController] facingSign must be -1 or 1');
-        }
-        this.facingSign = this.facingSign < 0 ? -1 : 1;
     }
 
     protected onEnable(): void {
         input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
-        this.footSensor!.on(Contact2DType.BEGIN_CONTACT, this.onFootBeginContact, this);
-        this.footSensor!.on(Contact2DType.END_CONTACT, this.onFootEndContact, this);
+        if (this.footSensor != null) {
+            this.footSensor.on(Contact2DType.BEGIN_CONTACT, this.onFootBeginContact, this);
+            this.footSensor.on(Contact2DType.END_CONTACT, this.onFootEndContact, this);
+        }
     }
 
     protected onDisable(): void {
@@ -73,46 +81,40 @@ export class PlayerController extends Component {
         input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
         this.footSensor?.off(Contact2DType.BEGIN_CONTACT, this.onFootBeginContact, this);
         this.footSensor?.off(Contact2DType.END_CONTACT, this.onFootEndContact, this);
+        this._groundContactCount = 0;
+        this._jumpsRemaining = MAX_JUMPS;
     }
 
-    protected update(deltaTime: number): void {
-        if (this._shootCooldownLeft > 0) {
-            this._shootCooldownLeft = Math.max(0, this._shootCooldownLeft - deltaTime);
-        }
-
+    protected update(_deltaTime: number): void {
         this.applyMoveAndJump();
-        if (this._shootQueued) {
-            this._shootQueued = false;
-            this.tryShoot();
-        }
         this.refreshPlayerState();
     }
 
-    /** Đặt hướng mặt từ MatchSetup / spawn. */
-    public setFacingSign(sign: number): void {
-        if (sign === 0) {
-            throw new Error('[PlayerController] facingSign must be -1 or 1');
-        }
-        this.facingSign = sign < 0 ? -1 : 1;
+    /** Đặt intent di chuyển ngang: -1 trái, 0 dừng, 1 phải. */
+    public setMoveIntent(axis: number): void {
+        this._moveAxis = axis < 0 ? -1 : axis > 0 ? 1 : 0;
+    }
+
+    /** Yêu cầu nhảy (tối đa MAX_JUMPS lần trước khi chạm đất lại). */
+    public requestJump(): void {
+        this._jumpQueued = true;
     }
 
     private onKeyDown(event: { keyCode: KeyCode }): void {
         switch (event.keyCode) {
             case KeyCode.KEY_A:
             case KeyCode.ARROW_LEFT:
-                this._moveAxis = -1;
+                this._leftHeld = true;
+                this.syncMoveIntentFromKeyboard();
                 break;
             case KeyCode.KEY_D:
             case KeyCode.ARROW_RIGHT:
-                this._moveAxis = 1;
+                this._rightHeld = true;
+                this.syncMoveIntentFromKeyboard();
                 break;
             case KeyCode.KEY_W:
             case KeyCode.ARROW_UP:
-                this._jumpQueued = true;
-                break;
-            case KeyCode.KEY_X:
-            case KeyCode.KEY_B:
-                this._shootQueued = true;
+                this.requestJump();
                 break;
             default:
                 break;
@@ -123,19 +125,33 @@ export class PlayerController extends Component {
         switch (event.keyCode) {
             case KeyCode.KEY_A:
             case KeyCode.ARROW_LEFT:
-                if (this._moveAxis < 0) {
-                    this._moveAxis = 0;
-                }
+                this._leftHeld = false;
+                this.syncMoveIntentFromKeyboard();
                 break;
             case KeyCode.KEY_D:
             case KeyCode.ARROW_RIGHT:
-                if (this._moveAxis > 0) {
-                    this._moveAxis = 0;
-                }
+                this._rightHeld = false;
+                this.syncMoveIntentFromKeyboard();
                 break;
             default:
                 break;
         }
+    }
+
+    private syncMoveIntentFromKeyboard(): void {
+        if (this._leftHeld && this._rightHeld) {
+            this.setMoveIntent(0);
+            return;
+        }
+        if (this._leftHeld) {
+            this.setMoveIntent(-1);
+            return;
+        }
+        if (this._rightHeld) {
+            this.setMoveIntent(1);
+            return;
+        }
+        this.setMoveIntent(0);
     }
 
     private onFootBeginContact(
@@ -143,7 +159,11 @@ export class PlayerController extends Component {
         _other: Collider2D,
         _contact: IPhysics2DContact | null,
     ): void {
+        const wasAirborne = !this.isGrounded;
         this._groundContactCount += 1;
+        if (wasAirborne && this.isGrounded) {
+            this._jumpsRemaining = MAX_JUMPS;
+        }
     }
 
     private onFootEndContact(
@@ -162,42 +182,18 @@ export class PlayerController extends Component {
         );
 
         if (this._moveAxis !== 0) {
-            this.facingSign = this._moveAxis < 0 ? -1 : 1;
+            this._facingSign = this._moveAxis < 0 ? -1 : 1;
         }
 
-        if (this._jumpQueued) {
-            this._jumpQueued = false;
-            if (this.isGrounded) {
-                body.linearVelocity = this._velocity.set(
-                    body.linearVelocity.x,
-                    PLAYER_JUMP_Y,
-                );
-            }
-        }
-    }
-
-    /** Sút bóng nếu trong vùng và hết cooldown. */
-    private tryShoot(): void {
-        if (this._shootCooldownLeft > 0) {
+        if (!this._jumpQueued) {
             return;
         }
-        if (!this.isBallInShootRange()) {
+        this._jumpQueued = false;
+        if (this._jumpsRemaining <= 0) {
             return;
         }
-
-        this._shotVelocity.set(this.facingSign * BALL_SHOT_X, BALL_SHOT_Y);
-        this.ballBody!.linearVelocity = this._shotVelocity;
-        this._shootCooldownLeft = SHOOT_COOLDOWN;
-    }
-
-    private isBallInShootRange(): boolean {
-        const playerPos = this.node.worldPosition;
-        const ballPos = this.ballBody!.node.worldPosition;
-        this._ballOffset.set(ballPos.x - playerPos.x, ballPos.y - playerPos.y);
-        return (
-            Math.abs(this._ballOffset.x) <= SHOOT_DISTANCE_X &&
-            Math.abs(this._ballOffset.y) <= SHOOT_DISTANCE_Y
-        );
+        body.linearVelocity = this._velocity.set(body.linearVelocity.x, PLAYER_JUMP_Y);
+        this._jumpsRemaining -= 1;
     }
 
     private refreshPlayerState(): void {

@@ -1,98 +1,80 @@
-# F001 — Player cơ bản (move / jump / shoot)
+# F001 — Player cơ bản (move + double jump)
 
 | Mục | Giá trị |
 |-----|---------|
 | Trạng thái | `in-progress` |
 | Module | gameplay |
 | Ngày tạo | 2026-08-06 |
+| Cập nhật | 2026-08-07 — scope rút: chỉ move 2 bên + nhảy tối đa 2 lần |
 
 ## Mô tả
 
-Người chơi 1v1 đơn giản: di chuyển ngang, nhảy (có phát hiện chạm đất), sút bóng trong vùng. Node tree **rút gọn** so với mô hình đầy đủ — Head / Energy / Teleport / DragonBones đầy đủ để feature sau.
+Người chơi prototype: **di chuyển ngang** (A/D) và **nhảy tối đa 2 lần** trước khi chạm đất lại (W). Không sút bóng trong F001.
 
-## Node tree F001 (đã lược)
-
-Cocos: `RigidBody2D` là **component** trên root, không phải node cha.
+## Node tree — `assets/scene/Game.scene`
 
 ```
-Player                         # PlayerController + RigidBody2D (Dynamic)
- ├─ BodyCollider               # BoxCollider2D — group PlayerBody
- ├─ FootSensor                 # BoxCollider2D, sensor — group PlayerFloor
- ├─ Visual                     # Sprite tạm (sau → ArmatureDisplay)
- └─ Shadow                     # Sprite (tuỳ chọn)
+Game
+└─ … / WorldRoot
+   ├─ FieldPhysics          # GroundCollider, …
+   ├─ Player                # PlayerController + RigidBody2D + BoxCollider2D
+   │  ├─ FootSensor         # sensor, group PlayerFoot
+   │  └─ Visual
+   └─ (Ball — có thể giữ trong scene nhưng F001 không dùng)
 ```
-
-| Giữ full model | F001 | Lý do |
-|----------------|------|-------|
-| HeadCollider | ❌ | Header / bounce — F00x sau |
-| BodyCollider Polygon | → Box | Đủ prototype |
-| FootSensor | ✅ | Jump cần grounded |
-| ArmatureDisplay | → Sprite tạm | Animation sau |
-| EnergyBarAnchor | ❌ | Super / energy sau |
-| TeleportFxAnchor | ❌ | Super Teleport sau |
 
 ## Acceptance criteria
 
-- [ ] AC1 — A/D (hoặc ←/→) đổi `linearVelocity.x` theo `PLAYER_MOVE`
-- [ ] AC2 — W (hoặc ↑) nhảy khi grounded: `linearVelocity.y = PLAYER_JUMP_Y` (hướng lên theo Cocos)
-- [ ] AC3 — FootSensor BEGIN/END contact cập nhật grounded đúng (không nhảy trên không)
-- [ ] AC4 — X (hoặc B) sút nếu bóng trong `SHOOT_DISTANCE_*` và hết cooldown 0.5s — set velocity bóng theo `BALL_SHOT_*` × hướng mặt
-- [ ] AC5 — `PlayerState`: Idle / Run / Jump phản ánh hành vi (chưa cần animation clip)
-- [ ] AC6 — Thiếu `@property` bắt buộc → throw trong `onLoad`
+- [ ] AC1 — A/D (hoặc ←/→) đổi `linearVelocity.x` theo `PLAYER_MOVE` (370); thả → dừng
+- [ ] AC2 — W (hoặc ↑) nhảy khi còn lượt: `linearVelocity.y = PLAYER_JUMP_Y` (600); tối đa **2 lần** rồi phải chạm đất mới nhảy tiếp
+- [ ] AC3 — FootSensor cập nhật grounded; chạm đất reset số lần nhảy về 2
+- [ ] AC4 — Giữ A+D rồi thả một phím → tiếp tục chạy theo phím còn giữ
+- [ ] AC5 — `PlayerState`: Idle / Run / Jump phản ánh hành vi
+- [ ] AC6 — Thiếu `rigidBody` / `footSensor` → throw trong `onLoad`
 
 ## Phân công
 
 ### Agent (TypeScript)
 
-**File tạo/sửa:**
-
 | File | Thay đổi |
 |------|----------|
-| `assets/scripts/gameplay/PlayerController.ts` | Move / jump / shoot + input desktop; hằng số trong file |
-| `assets/scripts/common/GameTypes.ts` | Thêm `PlayerState`, `Side` |
+| `assets/scripts/gameplay/PlayerController.ts` | Move + double jump; bỏ shoot / `ballBody` |
 
-**`@property` cần Human wire:**
+**`@property` Human wire:**
 
-| Component | Property | Kiểu | Ghi chú |
-|-----------|----------|------|---------|
-| PlayerController | rigidBody | RigidBody2D | Cùng node Player |
-| PlayerController | footSensor | Collider2D | Child FootSensor |
-| PlayerController | ballBody | RigidBody2D | Ball prefab (Dynamic) |
-| PlayerController | facingSign | number | `-1` trái / `1` phải (mặc định nhân) |
+| Property | Kiểu | Trạng thái |
+|----------|------|------------|
+| rigidBody | RigidBody2D | ✅ đã wire |
+| footSensor | Collider2D | ✅ đã wire |
+
+> Đã **gỡ** `ballBody` / `facingSign` khỏi Inspector — Human bỏ ref thừa trên component nếu Editor còn hiển thị missing.
 
 ### Human (Editor)
 
-- [ ] Prefab `assets/prefabs/Player.prefab` theo node tree F001
-- [ ] Physics group: `PlayerBody`, `PlayerFloor`; FootSensor chỉ collide với Ground
-- [ ] Scene test (hoặc Gameplay tạm): sàn có Collider2D static + Ball RigidBody2D
-- [ ] Wire `@property` theo bảng trên
-- [ ] Play mode theo checklist
+- [ ] H001 — Giữ Player + FootSensor + sàn trong `Game.scene`
+- [ ] H002 — Xóa slot `ballBody` (nếu còn) trên `PlayerController` sau khi script reload
+- [ ] H003 — Play mode checklist → `/checklist-done F001`
 
 ## Plan
 
 ### Agent
 
-- [x] T001 — `PlayerState` / `Side` + hằng số trong `PlayerController`
-- [x] T002 — `PlayerController.ts` move / jump / shoot
-- [x] T003 — Spec + sync docs
+- [x] T001 — Rút `PlayerController`: bỏ shoot/ball; double jump `MAX_JUMPS = 2`
+- [x] T002 — Sync docs F001 / modules / scenes / changelog
 
-### Human / Play mode
+### Human
 
-- [ ] H001 — Tạo prefab Player + sàn + ball test
-- [ ] H002 — Wire property + group collision
-- [ ] H003 — Play mode checklist
+- [ ] H002 — Dọn Inspector (bỏ ballBody cũ)
+- [ ] H003 — Play + `/checklist-done F001`
 
-## Play mode checklist
+## Play mode checklist (Human)
 
-1. Player đứng trên sàn — không rơi xuyên; grounded = true
-2. A/D di chuyển; thả phím → vx ≈ 0
-3. W nhảy một lần khi chạm đất; trên không không nhảy thêm (F001 chưa double-jump)
-4. Bóng trong vùng sút + X → bóng bay theo hướng facing
-5. X ngoài vùng / trong cooldown → không sút
-6. Console không throw thiếu reference
+1. Đứng trên sàn — không rơi xuyên
+2. A/D chạy hai bên; thả → dừng; giữ A+D thả một phím → vẫn chạy hướng còn giữ
+3. W nhảy lần 1 (từ đất hoặc không); W lần 2 trên không → nhảy thêm; lần 3 không nhảy đến khi chạm đất
+4. Console không throw thiếu `rigidBody` / `footSensor`
 
-## Ghi chú / liên kết
+## Ghi chú
 
-- Kiến trúc: Component + State Machine (`PlayerState`)
-- Tuning: hằng số trong `PlayerController` (tham chiếu giá trị gốc ở `SOURCE-REFERENCE.md`)
-- Feature sau: HeadCollider, tackle, super, DragonBones, EnergyBar
+- Sút bóng / Ball → feature sau (`BallController`)
+- Intent: `setMoveIntent` / `requestJump` giữ cho AI sau

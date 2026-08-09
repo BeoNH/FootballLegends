@@ -15,6 +15,7 @@ Ngôn ngữ chung giữa team và Agent. Dùng thuật ngữ trong spec, tên bi
 | `side` | `-1` = human (trái), `1` = bot (phải) | Theo hướng sân |
 | `PlayerState` | idle / run / jump / tackle / stun | SM cầu thủ — F001 dùng Idle/Run/Jump |
 | `facingSign` | `-1` mặt trái, `1` mặt phải | Sút theo hướng mặt |
+| `intent` | Ý định điều khiển: `setMoveIntent` / `requestJump` | Bàn phím và AI cùng gọi; sút (`requestShoot`) ở feature sau |
 | `Kickoff` | Countdown 3-2-1 → còi → `Playing` | Sau mỗi bàn / bắt đầu hiệp |
 | `CharacterSlot` | `1` hoặc `2` — nhân vật trong đội | Slot 1 = Fireball, slot 2 = Teleport |
 | `skinIndex` | Chỉ số skin DragonBones: `2×teamId-2` hoặc `2×teamId-1` | 48 skin / 24 team |

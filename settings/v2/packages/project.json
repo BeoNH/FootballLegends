@@ -16,12 +16,33 @@
       },
       {
         "index": 2,
-        "name": "Player"
+        "name": "Wall"
       },
       {
         "index": 3,
+        "name": "PlayerBody"
+      },
+      {
+        "index": 4,
+        "name": "PlayerFoot"
+      },
+      {
+        "index": 5,
         "name": "Ball"
+      },
+      {
+        "index": 6,
+        "name": "GoalSensor"
       }
-    ]
+    ],
+    "collisionMatrix": {
+      "0": 1,
+      "1": 56,
+      "2": 56,
+      "3": 102,
+      "4": 6,
+      "5": 78,
+      "6": 40
+    }
   }
 }
