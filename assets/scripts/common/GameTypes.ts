@@ -5,10 +5,10 @@ export enum GameState {
     RESULT = 'RESULT',
 }
 
-/** Hướng sân: human trái = -1, bot phải = 1. */
+/** Hướng sút về goal đối phương: human → phải (+1), bot → trái (-1). */
 export enum Side {
-    Human = -1,
-    Bot = 1,
+    Human = 1,
+    Bot = -1,
 }
 
 /** State machine hành vi cầu thủ (F001: Idle / Run / Jump). */

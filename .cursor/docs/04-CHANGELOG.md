@@ -19,8 +19,16 @@ Một dòng mỗi thay đổi đáng kể. Agent thêm khi implement; dòng revi
 - [F001] Plan re-scope theo `assets/scene/Game.scene` thực tế (Player/Ball dựng trong scene, `@property` đã wire): thêm AC7/AC8, task T004–T007 (intent API, đa phím, lifecycle guard) — Agent (Plan)
 - [F001] `PlayerController`: intent API (`setMoveIntent`/`requestJump`/`requestShoot`), getter runtime, fix giữ A+D (AC7), guard `onEnable` + reset grounded `onDisable` (T004–T006) — Agent (Build)
 - [F001] `PlayerController`: chỉ move 2 bên + double jump (`MAX_JUMPS=2`); gỡ shoot / `ballBody` / `facingSign` property — Agent
-
+- [F001] `PlayerController`: gộp physics trên node Player; resolve `RigidBody2D`/`BoxCollider2D` theo group `PlayerBody`/`PlayerFoot` (bỏ `@property` + child FootSensor) — Agent
+- [F001] `PlayerController`: `bodyCollider.friction = 0` tránh dính mặt dọc Polygon Ground khi dí tường nhảy — Agent
+- Physics matrix: tắt Ball ↔ PlayerBody — bóng xuyên player, vẫn chạm Ground/Wall — Agent
+- [F002] `BallController`: nảy Ground do Editor (RigidBody2D/Collider2D); code chỉ BodySensor đỡ bóng — Agent
+- [F003] `PlayerController`: sút X (`SHOOT_DISTANCE` 60 phía trước), face ball, cooldown 0.5s — Agent
+- [F003] `BallController.shoot(side)`: `Side.Human=1`; `BALL_SHOT_X/Y=18/12`; skip BodySensor lift 0.5s; baseline `|vy|` — Agent
 ### Review
+- [Review F003] Play mode OK — 2026-08-14
+- [Review F002] Play mode OK — 2026-08-13
+- [Review F001] Play mode OK — 2026-08-12
 - (tick qua `/checklist-done` — không thêm tay)
 
 ---

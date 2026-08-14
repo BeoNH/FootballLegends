@@ -2,10 +2,10 @@
 
 | Mục | Giá trị |
 |-----|---------|
-| Trạng thái | `in-progress` |
+| Trạng thái | `done` |
 | Module | gameplay |
 | Ngày tạo | 2026-08-06 |
-| Cập nhật | 2026-08-07 — scope rút: chỉ move 2 bên + nhảy tối đa 2 lần |
+| Cập nhật | 2026-08-12 — gộp physics lên node Player; resolve theo group |
 
 ## Mô tả
 
@@ -17,20 +17,20 @@ Người chơi prototype: **di chuyển ngang** (A/D) và **nhảy tối đa 2 l
 Game
 └─ … / WorldRoot
    ├─ FieldPhysics          # GroundCollider, …
-   ├─ Player                # PlayerController + RigidBody2D + BoxCollider2D
-   │  ├─ FootSensor         # sensor, group PlayerFoot
+   ├─ Player                # PlayerController + RigidBody2D(group PlayerBody)
+   │                        # + BoxCollider2D(group PlayerBody) + BoxCollider2D sensor(group PlayerFoot)
    │  └─ Visual
    └─ (Ball — có thể giữ trong scene nhưng F001 không dùng)
 ```
 
 ## Acceptance criteria
 
-- [ ] AC1 — A/D (hoặc ←/→) đổi `linearVelocity.x` theo `PLAYER_MOVE` (370); thả → dừng
-- [ ] AC2 — W (hoặc ↑) nhảy khi còn lượt: `linearVelocity.y = PLAYER_JUMP_Y` (600); tối đa **2 lần** rồi phải chạm đất mới nhảy tiếp
-- [ ] AC3 — FootSensor cập nhật grounded; chạm đất reset số lần nhảy về 2
-- [ ] AC4 — Giữ A+D rồi thả một phím → tiếp tục chạy theo phím còn giữ
-- [ ] AC5 — `PlayerState`: Idle / Run / Jump phản ánh hành vi
-- [ ] AC6 — Thiếu `rigidBody` / `footSensor` → throw trong `onLoad`
+- [x] AC1 — A/D (hoặc ←/→) đổi `linearVelocity.x` theo `PLAYER_MOVE` (370); thả → dừng
+- [x] AC2 — W (hoặc ↑) nhảy khi còn lượt: `linearVelocity.y = PLAYER_JUMP_Y` (600); tối đa **2 lần** rồi phải chạm đất mới nhảy tiếp
+- [x] AC3 — FootSensor cập nhật grounded; chạm đất reset số lần nhảy về 2
+- [x] AC4 — Giữ A+D rồi thả một phím → tiếp tục chạy theo phím còn giữ
+- [x] AC5 — `PlayerState`: Idle / Run / Jump phản ánh hành vi
+- [x] AC6 — Thiếu RigidBody2D / BoxCollider2D group `PlayerBody` / `PlayerFoot` → `console.warn` trong `onLoad`
 
 ## Phân công
 
@@ -38,22 +38,20 @@ Game
 
 | File | Thay đổi |
 |------|----------|
-| `assets/scripts/gameplay/PlayerController.ts` | Move + double jump; bỏ shoot / `ballBody` |
+| `assets/scripts/gameplay/PlayerController.ts` | Move + double jump; resolve physics theo group trên cùng node Player |
 
-**`@property` Human wire:**
+**Resolve runtime (không `@property`):**
 
-| Property | Kiểu | Trạng thái |
-|----------|------|------------|
-| rigidBody | RigidBody2D | ✅ đã wire |
-| footSensor | Collider2D | ✅ đã wire |
-
-> Đã **gỡ** `ballBody` / `facingSign` khỏi Inspector — Human bỏ ref thừa trên component nếu Editor còn hiển thị missing.
+| Thành phần | Cách lấy | Group |
+|------------|----------|-------|
+| rigidBody | `getComponent(RigidBody2D)` | `PlayerBody` |
+| bodyCollider | `getComponents(BoxCollider2D)` | `PlayerBody` |
+| footSensor | `getComponents(BoxCollider2D)` sensor | `PlayerFoot` |
 
 ### Human (Editor)
 
-- [ ] H001 — Giữ Player + FootSensor + sàn trong `Game.scene`
-- [ ] H002 — Xóa slot `ballBody` (nếu còn) trên `PlayerController` sau khi script reload
-- [ ] H003 — Play mode checklist → `/checklist-done F001`
+- [x] H001 — Trên node `Player`: RigidBody2D group `PlayerBody`; 2 BoxCollider2D groups `PlayerBody` + `PlayerFoot` (sensor); bỏ child FootSensor nếu còn
+- [x] H003 — Play mode checklist → `/checklist-done F001`
 
 ## Plan
 
@@ -64,15 +62,16 @@ Game
 
 ### Human
 
-- [ ] H002 — Dọn Inspector (bỏ ballBody cũ)
-- [ ] H003 — Play + `/checklist-done F001`
+- [x] H001 — Physics groups trên cùng node Player
+- [x] H003 — Play + `/checklist-done F001`
 
 ## Play mode checklist (Human)
 
-1. Đứng trên sàn — không rơi xuyên
+1. Đứng trên sàn — không rơi xuyên; debug Foot (PlayerFoot) đi cùng Player
 2. A/D chạy hai bên; thả → dừng; giữ A+D thả một phím → vẫn chạy hướng còn giữ
 3. W nhảy lần 1 (từ đất hoặc không); W lần 2 trên không → nhảy thêm; lần 3 không nhảy đến khi chạm đất
-4. Console không throw thiếu `rigidBody` / `footSensor`
+4. Dí sát mặt dọc Polygon Ground + giữ hướng vào tường + W: không dính tường / không bị “trôi dọc tường”; nhảy không bị cắt thấp vì friction
+5. Console warn (không crash) nếu thiếu RigidBody / collider group `PlayerBody` / `PlayerFoot`
 
 ## Ghi chú
 

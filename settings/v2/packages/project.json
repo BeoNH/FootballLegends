@@ -24,25 +24,30 @@
       },
       {
         "index": 4,
-        "name": "PlayerFoot"
+        "name": "FootSensor"
       },
       {
         "index": 5,
-        "name": "Ball"
+        "name": "BodySensor"
       },
       {
         "index": 6,
+        "name": "Ball"
+      },
+      {
+        "index": 7,
         "name": "GoalSensor"
       }
     ],
     "collisionMatrix": {
       "0": 1,
-      "1": 56,
-      "2": 56,
-      "3": 102,
-      "4": 6,
-      "5": 78,
-      "6": 40
+      "1": 88,
+      "2": 72,
+      "3": 6,
+      "4": 2,
+      "5": 96,
+      "6": 166,
+      "7": 64
     },
     "gravity": {
       "y": -25

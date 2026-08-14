@@ -12,11 +12,12 @@ Ngôn ngữ chung giữa team và Agent. Dùng thuật ngữ trong spec, tên bi
 | `MatchPhase` | Giai đoạn trận: Countdown → Playing → GoalPause → HalfTime → FullTime → Overtime | Enum runtime |
 | `MatchData` | State runtime trận: `score1`, `score2`, `energies[]` | Model runtime — sở hữu bởi `MatchController` |
 | `MatchSetup` | Cấu hình trước trận: teamId, characterSlot, super type | Từ TeamSelect |
-| `side` | `-1` = human (trái), `1` = bot (phải) | Theo hướng sân |
+| `side` | `1` = human (sút GoalRight), `-1` = bot (sút GoalLeft) | Hướng sút về goal đối phương — không dùng làm tọa độ spawn |
 | `PlayerState` | idle / run / jump / tackle / stun | SM cầu thủ — F001 dùng Idle/Run/Jump |
-| `facingSign` | `-1` mặt trái, `1` mặt phải | Sút theo hướng mặt |
-| `intent` | Ý định điều khiển: `setMoveIntent` / `requestJump` | Bàn phím và AI cùng gọi; sút (`requestShoot`) ở feature sau |
+| `facingSign` | `-1` mặt trái, `1` mặt phải | F003: luôn hướng về bóng |
+| `intent` | Ý định điều khiển: `setMoveIntent` / `requestJump` / `requestShoot` | F003 thêm sút (X) |
 | `Kickoff` | Countdown 3-2-1 → còi → `Playing` | Sau mỗi bàn / bắt đầu hiệp |
+| `shoot arc` | Cú sút: `vx` về goal đối phương + `vy` lên → quỹ đạo cầu vồng | F003; không tâng BodySensor khi đang kick |
 | `CharacterSlot` | `1` hoặc `2` — nhân vật trong đội | Slot 1 = Fireball, slot 2 = Teleport |
 | `skinIndex` | Chỉ số skin DragonBones: `2×teamId-2` hoặc `2×teamId-1` | 48 skin / 24 team |
 | `superPower` | Loại super: `0` = Fireball, `1` = Teleport | `skinIndex % 2` |
@@ -25,6 +26,9 @@ Ngôn ngữ chung giữa team và Agent. Dùng thuật ngữ trong spec, tên bi
 | `superShotCount` | Điểm energy hiện tại (nạp theo thời gian × 1.5) | |
 | `botsSkill` | Hệ số AI 0–1; friendly v1 = **0.3** | Ảnh hưởng move/jump/shoot chance |
 | `Overtime` | Hiệp phụ: hòa sau hiệp 2 → bàn thắng vàng | |
+| `BodySensor` | Collider **sensor** trên Player (group `BodySensor`) — bóng xuyên `PlayerBody` nhưng bắt overlap để nảy | F002 |
+| `FootSensor` | Sensor chân Player — grounded | F001 (đổi tên group từ PlayerFoot) |
+| `Ball bounce` | Ground Editor nhớ `|vy|` lúc chạm sàn. BodySensor nâng `BODY_LIFT_SPEED` rồi nảy chậm về tốc độ đã nhớ | Wall → feature sau |
 
 ## Quy ước đặt tên
 
