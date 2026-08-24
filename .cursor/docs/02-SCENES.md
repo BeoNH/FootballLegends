@@ -6,34 +6,41 @@
 
 | Scene | Đường dẫn | Mô tả | Scripts gắn | Trạng thái |
 |-------|-----------|-------|-------------|------------|
-| **Game** | `assets/scene/Game.scene` | sân + Player + Ball | `PlayerController`, `BallController` | done (F001–F003) |
+| **Game** | `assets/scene/Game.scene` | sân + Player + Ball + HUD | `MatchController`, `PlayerController`, `BallController` | in-progress (F004) |
 | Boot | `assets/scenes/Boot.scene` | Preload asset, chuyển Menu | `AssetLoader` | planned |
 | Menu | `assets/scenes/Menu.scene` | Nút Play Friendly | — | planned |
 | TeamSelect | `assets/scenes/TeamSelect.scene` | Chọn đội + nhân vật + super | — (UI logic sau) | planned |
 | Gameplay | `assets/scenes/Gameplay.scene` | Trận 1v1 đầy đủ — tách ra từ `Game.scene` khi làm `MatchController` | `MatchController`, player/ball prefabs | planned |
 
-### `Game.scene` — node tree hiện tại (F002)
+### `Game.scene` — node tree (F004)
 
 ```
-Game → Canvas → WorldRoot
-  ├─ PlayGround     (BG, GoalLeft, GoalRight)
-  ├─ FieldPhysics   (GroundCollider, SandCollider, GoalSensorLeft/Right)
-  ├─ Player         (PlayerController + RigidBody2D PlayerBody
-  │                  + BoxCollider2D PlayerBody / BodySensor / FootSensor) → Visual
-  ├─ Ball           (BallController + RigidBody2D Ball + BoxCollider2D Ball)
-  └─ Effects
+Game
+├─ Managers          ← gắn MatchController (+ PhysicsDebug2D)
+├─ Canvas
+│   ├─ Camera
+│   ├─ WorldRoot
+│   │   ├─ FieldPhysics  GroundCollider, Wall_1/2, GoalSensorLeft/Right
+│   │   ├─ Actors        Player, Ball
+│   │   ├─ PlayGround    GoalLeft, GoalRight
+│   │   └─ Effects
+│   ├─ UIRoot
+│   │   ├─ ScoreBar      Bar, T_1, T_2, Icon_1, Icon_2
+│   │   ├─ TimeLabel
+│   │   └─ help0000/0001
+│   └─ PopupRoot         (end-game sau)
 ```
 
-F001 dựng Player/Ball **trực tiếp trong scene**, chưa tách prefab.
+F001–F003 dựng Player/Ball trong scene. `GoalSensorLeft` hiện **x=+325** (cạnh GoalRight); điểm F004 theo **world X**, không theo tên node.
 
 ### Physics group (settings project)
 
 | Index | Group | Va chạm với |
 |-------|-------|-------------|
 | 1 | `Ground` | PlayerBody, FootSensor, Ball |
-| 2 | `Wall` | PlayerBody, Ball |
+| 2 | `Wall` | PlayerBody, FootSensor, Ball |
 | 3 | `PlayerBody` | Ground, Wall |
-| 4 | `FootSensor` | Ground |
+| 4 | `FootSensor` | Ground, Wall |
 | 5 | `BodySensor` | Ball |
 | 6 | `Ball` | Ground, Wall, BodySensor, GoalSensor |
 | 7 | `GoalSensor` | Ball |
@@ -52,16 +59,17 @@ F001 dựng Player/Ball **trực tiếp trong scene**, chưa tách prefab.
 
 ## Wire `@property` (checklist)
 
-### MatchController (Gameplay scene)
+### MatchController (F004 — node Managers)
 
-| Component | Property | Kiểu | Gán tới | [ ] Done |
-|-----------|----------|------|---------|----------|
-| MatchController | playerHuman | Node | Player prefab instance (side +1 = sút GoalRight) | |
-| MatchController | playerBot | Node | Player prefab instance (side 1) | |
-| MatchController | ball | Node | Ball prefab instance | |
-| MatchController | hudMatch | Node | HudMatch prefab | |
-| MatchController | overlayPause | Node | OverlayPause prefab | |
-| MatchController | playground | Node | Playground colliders | |
+| Property | Kiểu | Gán tới |
+|----------|------|---------|
+| player | PlayerController | Actors/Player |
+| ball | BallController | Actors/Ball |
+| scoreLabelT1 | Label | ScoreBar/T_1 |
+| scoreLabelT2 | Label | ScoreBar/T_2 |
+| timeLabel | Label | UIRoot/TimeLabel |
+
+Chi tiết: `features/F004-match-session.md`.
 
 ### PlayerController (F001 — node trong `Game.scene`)
 

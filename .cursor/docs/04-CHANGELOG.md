@@ -25,6 +25,8 @@ Một dòng mỗi thay đổi đáng kể. Agent thêm khi implement; dòng revi
 - [F002] `BallController`: nảy Ground do Editor (RigidBody2D/Collider2D); code chỉ BodySensor đỡ bóng — Agent
 - [F003] `PlayerController`: sút X (`SHOOT_DISTANCE` 60 phía trước), face ball, cooldown 0.5s — Agent
 - [F003] `BallController.shoot(side)`: `Side.Human=1`; `BALL_SHOT_X/Y=18/12`; skip BodySensor lift 0.5s; baseline `|vy|` — Agent
+- [F004] `MatchController`: timer 90s, GoalSensor → T_1/T_2, GoalPause 1.5s, kickoff; không popup — Agent
+- [F004] Player `setInputEnabled` / `resetToKickoff`; Ball `enterRestMode` (gravity+damping) — Agent
 ### Review
 - [Review F003] Play mode OK — 2026-08-14
 - [Review F002] Play mode OK — 2026-08-13

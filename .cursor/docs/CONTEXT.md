@@ -9,7 +9,7 @@ Ngôn ngữ chung giữa team và Agent. Dùng thuật ngữ trong spec, tên bi
 | Thuật ngữ | Định nghĩa ngắn | Ghi chú |
 |-----------|-----------------|---------|
 | `FriendlyMatch` | Trận giao hữu 1v1 human vs bot, không bracket | Duy nhất mode v1 |
-| `MatchPhase` | Giai đoạn trận: Countdown → Playing → GoalPause → HalfTime → FullTime → Overtime | Enum runtime |
+| `MatchPhase` | Giai đoạn trận F004: Playing → GoalPause → Playing; hết giờ → FullTime | Countdown / Half / OT sau |
 | `MatchData` | State runtime trận: `score1`, `score2`, `energies[]` | Model runtime — sở hữu bởi `MatchController` |
 | `MatchSetup` | Cấu hình trước trận: teamId, characterSlot, super type | Từ TeamSelect |
 | `side` | `1` = human (sút GoalRight), `-1` = bot (sút GoalLeft) | Hướng sút về goal đối phương — không dùng làm tọa độ spawn |

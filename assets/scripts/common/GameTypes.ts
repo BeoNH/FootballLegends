@@ -5,6 +5,13 @@ export enum GameState {
     RESULT = 'RESULT',
 }
 
+/** Phase phiên đấu — owner `MatchController`. */
+export enum MatchPhase {
+    Playing = 'Playing',
+    GoalPause = 'GoalPause',
+    FullTime = 'FullTime',
+}
+
 /** Hướng sút về goal đối phương: human → phải (+1), bot → trái (-1). */
 export enum Side {
     Human = 1,

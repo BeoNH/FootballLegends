@@ -11,6 +11,7 @@ import {
     PhysicsSystem2D,
     RigidBody2D,
     Vec2,
+    Vec3,
     input,
 } from 'cc';
 import { IState, Side } from '../common/GameTypes';
@@ -30,7 +31,7 @@ const SHOOT_DISTANCE_X = 60;
 const SHOOT_DISTANCE_Y = 60;
 const SHOOT_COOLDOWN = 0.5;
 
-/** Điều khiển cầu thủ: move + jump (F001) + sút X / face ball (F003). */
+/** Điều khiển cầu thủ: A/D move, W nhảy đôi, X sút vùng phía trước, luôn quay mặt về bóng. */
 @ccclass('PlayerController')
 export class PlayerController extends Component {
     @property({ type: Node, tooltip: 'Node Ball để sút và hướng mặt' })
@@ -45,6 +46,8 @@ export class PlayerController extends Component {
     public side: Side = Side.Human;
 
     private readonly velocity = new Vec2();
+    private readonly kickoffWorldPos = new Vec3();
+    private inputEnabled = true;
     private rigidBody: RigidBody2D | null = null;
     private bodyCollider: BoxCollider2D | null = null;
     private footSensor: BoxCollider2D | null = null;
@@ -65,21 +68,22 @@ export class PlayerController extends Component {
         this.resolvePhysicsRefs();
         this.resolveBallRefs();
         this.applyPhysicsDefaults();
+        this.node.getWorldPosition(this.kickoffWorldPos);
     }
 
     protected onEnable(): void {
         input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
-        this.footSensor?.on(Contact2DType.BEGIN_CONTACT, this.onGroundBegin, this);
-        this.footSensor?.on(Contact2DType.END_CONTACT, this.onGroundEnd, this);
+        this.footSensor?.on(Contact2DType.BEGIN_CONTACT, this.onFootStandBegin, this);
+        this.footSensor?.on(Contact2DType.END_CONTACT, this.onFootStandEnd, this);
         this.resetRuntimeState();
     }
 
     protected onDisable(): void {
         input.off(Input.EventType.KEY_DOWN, this.onKeyDown, this);
         input.off(Input.EventType.KEY_UP, this.onKeyUp, this);
-        this.footSensor?.off(Contact2DType.BEGIN_CONTACT, this.onGroundBegin, this);
-        this.footSensor?.off(Contact2DType.END_CONTACT, this.onGroundEnd, this);
+        this.footSensor?.off(Contact2DType.BEGIN_CONTACT, this.onFootStandBegin, this);
+        this.footSensor?.off(Contact2DType.END_CONTACT, this.onFootStandEnd, this);
         this.clearInputState();
     }
 
@@ -89,12 +93,43 @@ export class PlayerController extends Component {
         this.applyMoveAndJump();
     }
 
+    /** Khóa / mở A/D/W/X — GoalPause và FullTime. */
+    public setInputEnabled(enabled: boolean): void {
+        this.inputEnabled = enabled;
+        if (enabled) {
+            return;
+        }
+        this.leftHeld = false;
+        this.rightHeld = false;
+        this.moveAxis = 0;
+        this.jumpQueued = false;
+        if (this.rigidBody != null) {
+            this.rigidBody.linearVelocity = this.velocity.set(0, this.rigidBody.linearVelocity.y);
+        }
+    }
+
+    /** Đưa player về spawn lúc onLoad; mở lại jump / cooldown. */
+    public resetToKickoff(): void {
+        this.node.setWorldPosition(this.kickoffWorldPos);
+        this.resetRuntimeState();
+        this.leftHeld = false;
+        this.rightHeld = false;
+        this.moveAxis = 0;
+        this.jumpQueued = false;
+        this.setInputEnabled(true);
+    }
+
+    /** Hàng đợi nhảy (W / ↑) — apply trong update. */
     public requestJump(): void {
+        if (!this.inputEnabled) {
+            return;
+        }
         this.jumpQueued = true;
     }
 
+    /** Sút nếu bóng trong vùng 60×60 phía trước mặt; cooldown 0.5s. */
     public requestShoot(): void {
-        if (this.shootCooldownLeft > 0 || this.ballController == null) {
+        if (!this.inputEnabled || this.shootCooldownLeft > 0 || this.ballController == null) {
             return;
         }
         if (!this.isBallInFrontShootRange()) {
@@ -175,7 +210,11 @@ export class PlayerController extends Component {
         this.shootCooldownLeft = Math.max(0, this.shootCooldownLeft - dt);
     }
 
+    /** A/D hoặc ←/→ → moveAxis; W nhảy; X sút. */
     private onKeyDown(event: { keyCode: KeyCode }): void {
+        if (!this.inputEnabled) {
+            return;
+        }
         switch (event.keyCode) {
             case KeyCode.KEY_A:
             case KeyCode.ARROW_LEFT:
@@ -232,20 +271,22 @@ export class PlayerController extends Component {
         this.moveAxis = 0;
     }
 
+    /** Áp vận tốc ngang + nhảy đôi; cập nhật Idle/Run/Jump. */
     private applyMoveAndJump(): void {
         const body = this.rigidBody;
         if (body == null) {
             return;
         }
 
+        const axis = this.inputEnabled ? this.moveAxis : 0;
         body.linearVelocity = this.velocity.set(
-            this.moveAxis * PLAYER_MOVE,
+            axis * PLAYER_MOVE,
             body.linearVelocity.y,
         );
 
         if (this.jumpQueued) {
             this.jumpQueued = false;
-            if (this.jumpsUsed < MAX_JUMPS) {
+            if (this.inputEnabled && this.jumpsUsed < MAX_JUMPS) {
                 body.linearVelocity = this.velocity.set(body.linearVelocity.x, PLAYER_JUMP_Y);
                 this.jumpsUsed += 1;
             }
@@ -258,6 +299,7 @@ export class PlayerController extends Component {
         this.playerState = this.moveAxis !== 0 ? IState.Run : IState.Idle;
     }
 
+    /** Flip Visual theo vị trí bóng (facingSign). */
     private faceTowardBall(): void {
         if (this.visualNode == null || this.ballNode == null) {
             return;
@@ -292,19 +334,24 @@ export class PlayerController extends Component {
         return true;
     }
 
-    private onGroundBegin(_self: Collider2D, other: Collider2D, _contact: IPhysics2DContact | null): void {
-        if (other.group !== PhysicsSystem2D.PhysicsGroup['Ground']) {
+    /** FootSensor chạm Ground/Wall → grounded; Ground nhảy đôi, Wall nhảy 1 (jumpsUsed=1). */
+    private onFootStandBegin(_self: Collider2D, other: Collider2D, _contact: IPhysics2DContact | null): void {
+        const groups = PhysicsSystem2D.PhysicsGroup;
+        const isGround = other.group === groups['Ground'];
+        const isWall = other.group === groups['Wall'];
+        if (!isGround && !isWall) {
             return;
         }
         const wasAirborne = this.groundContacts === 0;
         this.groundContacts += 1;
         if (wasAirborne) {
-            this.jumpsUsed = 0;
+            this.jumpsUsed = isWall ? 1 : 0;
         }
     }
 
-    private onGroundEnd(_self: Collider2D, other: Collider2D, _contact: IPhysics2DContact | null): void {
-        if (other.group !== PhysicsSystem2D.PhysicsGroup['Ground']) {
+    private onFootStandEnd(_self: Collider2D, other: Collider2D, _contact: IPhysics2DContact | null): void {
+        const groups = PhysicsSystem2D.PhysicsGroup;
+        if (other.group !== groups['Ground'] && other.group !== groups['Wall']) {
             return;
         }
         this.groundContacts = Math.max(0, this.groundContacts - 1);
