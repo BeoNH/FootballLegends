@@ -22,3 +22,7 @@ node_modules/
 # WebStorm
 #//////////////////////////
 .idea/
+# project-map
+.claude/map/_scan.*
+.claude/map/meta.json
+.claude/map/HANDOFF.md

@@ -1,7 +1,7 @@
 {
   "host": "127.0.0.1",
   "port": 8765,
-  "toolProfile": "full",
+  "toolProfile": "core",
   "enabledTools": [],
   "disabledTools": [],
   "enabledToolCategories": [],
@@ -10,8 +10,18 @@
   "executeJavascriptSafetyChecks": true,
   "autostart": true,
   "maxInteractionLogEntries": 50,
-  "lastClientTargetId": "cursor",
+  "lastClientTargetId": "vscode",
   "activeToolProfileName": "",
   "savedToolProfiles": [],
-  "language": "auto"
+  "language": "auto",
+  "portMode": "fixed",
+  "clientConfigEntries": {
+    "vscode": {
+      "serverName": "cocos-footballlege-e16964",
+      "url": "http://127.0.0.1:8765/",
+      "configPath": "C:\\Users\\hoang\\AppData\\Roaming\\Code\\User\\mcp.json",
+      "projectIdentity": "e16964bdb412e3ab6ec4e4fc"
+    }
+  },
+  "enableConsoleLogging": true
 }
