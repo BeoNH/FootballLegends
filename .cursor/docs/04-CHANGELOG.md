@@ -2,6 +2,16 @@
 
 Một dòng mỗi thay đổi đáng kể. Agent thêm khi implement; dòng review khi `/checklist-done`.
 
+## 2026-10-23
+
+### Implemented (chưa Play test)
+- [F005] Match flow đầy đủ: Countdown, 2 hiệp, HalfTime, Overtime, Result, `MatchData`
+- [F006] Bot AI: `AiController` port AIController2, `isHuman`/`opponent`
+- [F007] Header `vx` + Tackle/Stun
+- [F008] Energy + Super (Fireball/Teleport) + `SlowMo`
+- [F009] HUD & UI: HudMatch, popup Menu/HalfTime/Result, TouchControls
+- [F010] Audio: `AudioManager` + event `BALL_SHOT`/`BALL_BOUNCE`
+
 ## [Unreleased]
 
 ### Added

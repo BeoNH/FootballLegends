@@ -1,4 +1,4 @@
-import { _decorator, Canvas, Component, director, Node, tween, UIOpacity, Vec3, warn } from 'cc';
+import { _decorator, Canvas, Component, director, Node, tween, Tween, UIOpacity, Vec3, warn } from 'cc';
 
 const { ccclass, property } = _decorator;
 
@@ -26,6 +26,9 @@ export class UiPopup extends Component {
     @property({ tooltip: 'Độ mờ của bg (0–255)' })
     protected bgOpacity = 100;
 
+    /** false = giữ node sau hide (popup đặt sẵn trong scene, dùng lại). */
+    protected destroyOnHide = true;
+
     private isVisible = false;
     private isAnimating = false;
     private bgOpacityComp: UIOpacity | null = null;
@@ -49,7 +52,7 @@ export class UiPopup extends Component {
         }
     }
 
-    public show(): void {
+    public show(data?: any): void {
         if (this.isVisible || this.isAnimating) {
             return;
         }
@@ -59,6 +62,7 @@ export class UiPopup extends Component {
         this.isVisible = true;
         this.isAnimating = true;
 
+        this.onShow(data);
         this.onBeforeShow();
         this.resetVisualState();
 
@@ -95,9 +99,15 @@ export class UiPopup extends Component {
     }
 
     public hide(onComplete?: () => void): void {
-        if (!this.isVisible || this.isAnimating) {
+        if (!this.isVisible) {
             onComplete?.();
             return;
+        }
+
+        // Đang chạy show anim → dừng tween rồi hide tiếp
+        if (this.isAnimating) {
+            Tween.stopAllByTarget(this.container);
+            Tween.stopAllByTarget(this.bgOpacityComp);
         }
 
         this.isAnimating = true;
@@ -131,6 +141,9 @@ export class UiPopup extends Component {
     public get visible(): boolean {
         return this.isVisible;
     }
+
+    /** Nhận data truyền từ PopupManager.show(name, data); override để render nội dung. */
+    protected onShow(_data?: any): void { }
 
     protected onBeforeShow(): void { }
 
@@ -202,6 +215,8 @@ export class UiPopup extends Component {
         const complete = this.hideComplete;
         this.hideComplete = null;
         complete?.();
-        this.node.destroy();
+        if (this.destroyOnHide) {
+            this.node.destroy();
+        }
     }
 }

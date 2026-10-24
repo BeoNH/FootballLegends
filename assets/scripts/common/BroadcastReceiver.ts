@@ -41,7 +41,7 @@ export default class BroadcastReceiver {
             let listener = this.listeners[i];
             if (listener.target && listener.target instanceof Object && listener.target.node) {
                 if (listener.action == action) {
-                    listener.callback(data);
+                    listener.callback.call(listener.target, data);
                 }
             } else {
                 this.listeners.splice(i--, 1);

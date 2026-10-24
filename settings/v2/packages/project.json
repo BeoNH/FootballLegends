@@ -52,5 +52,6 @@
     "gravity": {
       "y": -25
     }
-  }
+  },
+  "custom_joint_texture_layouts": []
 }

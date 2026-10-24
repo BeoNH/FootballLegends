@@ -3,19 +3,29 @@ import {
     Collider2D,
     Component,
     Contact2DType,
+    game,
     IPhysics2DContact,
+    Node,
     PhysicsSystem2D,
     RigidBody2D,
     Vec2,
     Vec3,
 } from 'cc';
+import BroadcastReceiver from '../common/BroadcastReceiver';
+import { GAME_EVENTS } from '../common/GameEvents';
+import { IBallShotPayload } from '../common/GameTypes';
 
 const { ccclass } = _decorator;
 
 const BODY_LIFT_SPEED = 15;
+/** Đẩy ngang khi đỡ bằng BodySensor (gốc 75 px/s ≈ 2.3 m/s), theo hướng tấn công của cầu thủ chạm. */
+const HEAD_PUSH_X = 2.3;
 const SETTLE_FACTOR = 0.85;
 const SETTLE_EPSILON = 0.5;
 
+/** Âm thanh nảy: |vy| tối thiểu và khoảng cách tối thiểu giữa 2 lần phát (s). */
+const BOUNCE_SOUND_MIN_VY = 3;
+const BOUNCE_SOUND_INTERVAL = 0.1;
 const BALL_SHOT_X = 18;
 const BALL_SHOT_Y = 12;
 const SHOOT_BODY_SKIP_TIME = 0.3;
@@ -31,7 +41,14 @@ export class BallController extends Component {
     private ballCollider: Collider2D | null = null;
 
     private isInBodySensor = false;
+    /** Side (hướng tấn công) của cầu thủ đang chạm BodySensor. */
+    private bodySensorSide = 0;
+    /** Dấu hướng bóng đang bay sau cú sút (0 = không phải bóng sút). */
+    private shootingSign = 0;
+    private lastBounceSoundTime = -1;
     private bodyLiftLocked = false;
+    /** Bóng đang bay do Fireball: chạm BodySensor đối thủ -> stun thay vì đỡ. */
+    private fireball = false;
     private skipBodySensorLift = false;
     private restMode = false;
     private restSettled = false;
@@ -84,9 +101,10 @@ export class BallController extends Component {
 
     /**
      * Sút cung: vx = shootSign × BALL_SHOT_X, vy = BALL_SHOT_Y.
+     * multiplier > 1 (Fireball ×1.8 vx) -> đánh dấu fireball đến khi chạm sàn/reset.
      * Bật settle về baseline; khóa đỡ BodySensor 0.5s.
      */
-    public shoot(shootSign: number): void {
+    public shoot(shootSign: number, multiplier = 1): void {
         if (this.restMode) {
             return;
         }
@@ -94,12 +112,26 @@ export class BallController extends Component {
         if (body == null) {
             return;
         }
-        body.linearVelocity = this.velocity.set(shootSign * BALL_SHOT_X, BALL_SHOT_Y);
+        body.linearVelocity = this.velocity.set(shootSign * BALL_SHOT_X * multiplier, BALL_SHOT_Y);
+        this.shootingSign = shootSign;
+        this.fireball = multiplier > 1;
         this.settlingToRemembered = true;
         this.settlePeakSpeed = BALL_SHOT_Y;
         this.skipBodySensorLift = true;
+        const shotPayload: IBallShotPayload = { fireball: this.fireball };
+        BroadcastReceiver.send(GAME_EVENTS.BALL_SHOT, shotPayload);
         this.unschedule(this.endSkipBodySensorLift);
         this.scheduleOnce(this.endSkipBodySensorLift, SHOOT_BODY_SKIP_TIME);
+    }
+
+    /** Bóng đang bay sau cú sút: trả hướng sút (+1/-1), 0 nếu không. Bot dùng để nhảy chắn. */
+    public isShooting(): number {
+        return this.shootingSign;
+    }
+
+    /** Bóng đang bay do Fireball. */
+    public isFireball(): boolean {
+        return this.fireball;
     }
 
     /** MatchController đăng ký: bóng vào GoalSensor → world X của sensor. */
@@ -111,6 +143,8 @@ export class BallController extends Component {
     public enterRestMode(): void {
         this.restMode = true;
         this.restSettled = false;
+        this.shootingSign = 0;
+        this.fireball = false;
         this.skipBodySensorLift = true;
         this.settlingToRemembered = false;
         const body = this.rigidBody;
@@ -149,6 +183,9 @@ export class BallController extends Component {
 
     private resetRuntimeState(): void {
         this.isInBodySensor = false;
+        this.bodySensorSide = 0;
+        this.shootingSign = 0;
+        this.fireball = false;
         this.bodyLiftLocked = false;
         this.skipBodySensorLift = false;
         this.hasBaseline = false;
@@ -173,6 +210,14 @@ export class BallController extends Component {
         if (other.group === groups['BodySensor']) {
             if (!this.isInBodySensor) {
                 this.isInBodySensor = true;
+                const player = this.resolvePlayer(other.node);
+                this.bodySensorSide = player?.side ?? 0;
+                if (this.fireball && player != null && player.side !== this.shootingSign) {
+                    // Fireball trúng đối thủ: stun thay vì đỡ bóng (gốc: kéo theo đối thủ).
+                    this.bodyLiftLocked = true;
+                    player.applyStun?.(this.shootingSign);
+                    return;
+                }
                 this.tryBodySensorLift();
             }
         }
@@ -200,6 +245,15 @@ export class BallController extends Component {
         const incomingY = body.linearVelocity.y;
         if (incomingY >= 0) {
             return;
+        }
+
+        this.shootingSign = 0;
+        this.fireball = false;
+
+        const now = game.totalTime / 1000;
+        if (-incomingY > BOUNCE_SOUND_MIN_VY && now - this.lastBounceSoundTime >= BOUNCE_SOUND_INTERVAL) {
+            this.lastBounceSoundTime = now;
+            BroadcastReceiver.send(GAME_EVENTS.BALL_BOUNCE);
         }
 
         if (this.restMode) {
@@ -237,7 +291,20 @@ export class BallController extends Component {
         body.linearVelocity = this.velocity.set(body.linearVelocity.x, this.settlePeakSpeed);
     }
 
-    /** Đỡ bóng: dừng ngang (vx=0), bắn lên BODY_LIFT_SPEED; một lần / overlap. */
+    /** Lấy PlayerController trên node sensor hoặc tổ tiên (tra theo tên để tránh import vòng). */
+    private resolvePlayer(sensorNode: Node): { side?: number; applyStun?: (dir: number) => void } | null {
+        let node: Node | null = sensorNode;
+        while (node != null) {
+            const player = node.getComponent('PlayerController') as { side?: number; applyStun?: (dir: number) => void } | null;
+            if (player != null && player.side != null) {
+                return player;
+            }
+            node = node.parent;
+        }
+        return null;
+    }
+
+    /** Đỡ bóng (header): đẩy ngang HEAD_PUSH_X theo hướng tấn công của cầu thủ, bắn lên BODY_LIFT_SPEED; một lần / overlap. */
     private tryBodySensorLift(): void {
         if (this.skipBodySensorLift || this.bodyLiftLocked || this.restMode) {
             return;
@@ -250,7 +317,7 @@ export class BallController extends Component {
         this.bodyLiftLocked = true;
         this.settlingToRemembered = true;
         this.settlePeakSpeed = BODY_LIFT_SPEED;
-        body.linearVelocity = this.velocity.set(0, BODY_LIFT_SPEED);
+        body.linearVelocity = this.velocity.set(HEAD_PUSH_X * this.bodySensorSide, BODY_LIFT_SPEED);
     }
 
     private freezeRestVelocity(): void {
