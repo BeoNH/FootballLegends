@@ -1,71 +1,29 @@
 # Architecture
 
-## Overview
+## Screen flow
 ```mermaid
 flowchart LR
-  MC[MatchController] -->|setGoalCallback / enterRestMode / resetToKickoff| BC[BallController]
-  MC -->|setInputEnabled / resetToKickoff| PC[PlayerController]
-  PC -->|ball ref, shoot| BC
-  MC -->|send| BR[BroadcastReceiver]
-  BR -.-> UI[UI listeners]
-  GT[GameTypes / GameEvents] --> MC
-  NM[NetworkManager] -.chưa dùng.-> BE[(Backend)]
+  Preloader --> Menu
+  Menu -->|1/2 PLAYER| Menu2
+  Menu -->|Menu2 skipped (Features)| RandomState
+  Menu -->|QUICK MATCH| Gameplay
+  Menu2 -->|FRIENDLY| RandomState
+  Menu2 -->|TOURNAMENT| RandomState
+  RandomState -->|PLAY friendly| Gameplay
+  RandomState -->|NEXT tournament| Tournament --> PreMatch --> Gameplay
+  Gameplay -->|half time| PreMatch
+  Gameplay -->|full time| PostMatch
+  PostMatch -->|friendly| RandomState
+  PostMatch -->|tournament| Tournament
+  PostMatch -->|eliminated/end| FinalTournament --> Menu2
 ```
+`backToModeMenu()` (Features.ts) trả 'Menu' khi Menu2 bị skip.
 
-## Flows
-```mermaid
-sequenceDiagram
-  participant B as BallController
-  participant M as MatchController
-  participant P as PlayerController
-  participant E as BroadcastReceiver
-  B->>M: goalCallback(sensorWorldX)
-  M->>M: score (x>0→T1, else T2), phase=GoalPause
-  M->>P: setInputEnabled(false)
-  M->>B: enterRestMode()
-  M->>E: MATCH_GOAL {scoreT1,scoreT2}
-  M->>M: scheduleOnce 1.5s
-  M->>P: resetToKickoff()
-  M->>B: resetToKickoff()
-  M->>E: MATCH_KICKOFF
-```
-**Match flow (F005)**: Menu Play / Rematch → `MATCH_START` → MatchController.startMatch (MatchData.reset, SlowMo.reset, resetPositions) → Countdown (`MATCH_COUNTDOWN{n}`, input khóa, ~0.9s) → `MATCH_KICKOFF` → Playing (30s thực/hiệp, `MATCH_TIME{display}`, energy +1.5/s) → hết hiệp 1: `MATCH_HALFTIME` (khóa input) → HalfTimePopup Continue → `MATCH_START_HALF2` → Countdown → hiệp 2 → hòa: `MATCH_OVERTIME` (golden goal, timer dừng) → bàn thắng/hết hiệp 2 → FullTime: `MATCH_END` + `MATCH_RESULT{score1,score2}` → ResultPopup (Rematch → MATCH_START, Menu → MenuPopup).
+## Gameplay loop (GameCore)
+- `update(dt)`: accumulator, mỗi tick `t = 0.025*timeScale`; nếu t≠0: `syncSceneToPhysics → PhysicsSystem2D.step(0.9*t) → syncPhysicsToScene` rồi update ball/players/AI. `autoSimulation=false` khi vào Gameplay, khôi phục khi thoát.
+- `slow(n)`: 1→0.05 (teleport), 2→0.4, 3→0 freeze (fireball), khác→1. DragonBones view nhận `setGameTimeScale` (freeze = 0.9 đo theo bản gốc).
+- Va chạm: ball/player chỉ va GROUND/FLOOR; head sensor & goal sensor bắt ball; bounce sàn/mặt ngang set `vy=470` thủ công trong BEGIN_CONTACT. Goal xử lý sau step.
+- Timer: internal 60s (friendly/quick) hoặc 30s/hiệp (tournament), hiển thị round(x*1.5). Countdown 3-2-1-GO ~0.89s sau bàn/kickoff/resume.
 
-| Event | Sender → Listener |
-|---|---|
-| MATCH_START | MenuPopup/ResultPopup → MatchController, AiController(stop), HudMatch, AudioManager |
-| MATCH_START_HALF2 | HalfTimePopup → MatchController |
-| MATCH_COUNTDOWN / MATCH_TIME | MatchController → HudMatch, AudioManager |
-| MATCH_KICKOFF | MatchController → AiController (chọn strategy), SuperAbility (cancel), AudioManager |
-| MATCH_GOAL / HALFTIME / OVERTIME | MatchController → HudMatch, AudioManager (HALFTIME → HalfTimePopup) |
-| MATCH_END / MATCH_RESULT | MatchController → HudMatch, AiController, SuperAbility, AudioManager / ResultPopup |
-| ENERGY_CHANGED / SUPER_USED | MatchController, SuperAbility → HudMatch / AudioManager |
-| BALL_SHOT / BALL_BOUNCE | BallController → AudioManager |
-| PLAYER_TACKLE / PLAYER_STUN | PlayerController → AudioManager |
-
-Human = score1 = T_1 = side +1; Bot = score2 = T_2 = side -1 (`PlayerController.side` là @property, bot phải set -1 trong Editor). SlowMo (static) scale physics qua fixedTimeStep; MatchController reset ở goal/half end/kickoff/start/disable.
-
-## Data
-| Type | Giá trị |
-|---|---|
-| MatchPhase | Idle, Countdown, Playing, GoalPause, HalfTime, Overtime, FullTime |
-| GameState | IDLE, PLAYING, PAUSED, RESULT |
-| IState (player) | Idle, Run, Jump, Tackle, Stun |
-| Side | Human=1, Bot=-1 |
-| GAME_EVENTS | xem bảng event ở Flows (paddle-hit = legacy) |
-
-## External
-- NetworkManager: query param `url_api` → httpBaseUrl; WS wsHost/wsPort (default localhost:3000). Chưa có caller trong game.
-
-## Scene
-`Game.scene` (nguồn: MCP get_hierarchy). Canvas world (427,240); tâm sân local x=0.
-- Managers [PhysicsDebug2D] (chưa có MatchController — cần gắn)
-- Canvas [Canvas, Widget]
-  - Camera, BG
-  - WorldRoot
-    - FieldPhysics: GroundCollider, Wall_1 (x-365), Wall_2 (x365), GoalSensorLeft (local x=+325!), GoalSensorRight (local x=-325!) — tên ngược vị trí; code dựa vào sensorX > centerX → T_1
-    - Actors: Player [RigidBody2D, 3×BoxCollider2D, PlayerController] (1 child), Ball [Sprite, RigidBody2D, BoxCollider2D, BallController]
-    - PlayGround: GoalLeft (x-365), GoalRight (x365, scaleX -1) [Sprite]
-    - Effects (rỗng)
-  - UIRoot: ScoreBar{Bar, T_1, T_2 [Label], Icon_1, Icon_2}, TimeLabel [Label], help0000/help0001 [Sprite]
-  - PopupRoot (rỗng)
+## Persistence
+localStorage `fb21_pk` (Inventory save: team, tsave/tsave2, stats) + `fb21_sfx_pk` (music/sfx), mỗi key kèm hash Java-style ở key+`h`.

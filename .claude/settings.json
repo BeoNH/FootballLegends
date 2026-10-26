@@ -1,5 +1,9 @@
-{ "permissions": { "deny": [
-  "Read(./library/**)", "Read(./temp/**)", "Read(./local/**)", "Read(./build/**)",
-  "Read(./native/**)", "Read(./profiles/**)", "Read(./**/*.meta)",
-  "Read(./**/*.prefab)", "Read(./**/*.scene)", "Read(./**/*.anim)"
-] } }
+{
+  "permissions": {
+    "allow": [
+      "Bash", "PowerShell", "Read", "Edit", "Write", "Glob", "Grep",
+      "WebFetch", "WebSearch", "mcp__funplay_cocos"
+    ],
+    "deny": []
+  }
+}

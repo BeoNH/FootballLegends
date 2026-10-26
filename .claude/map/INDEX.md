@@ -1,41 +1,37 @@
 # FootballLegends — map
-Game bóng đá 2D 1v1 (human vs bot) trên Cocos Creator 3.8.7, 1 scene `assets/scene/Game.scene`. Đang ở giai đoạn đầu (F001–F003).
-Stack: Cocos Creator 3.8.7 + TypeScript (strict=false) + Box2D physics | Run/Build: Creator editor (Play/Build panel) | Test: không có (game); chỉ extension có test
+Port 1:1 game web "Football Legends" (Phaser 2 + nape + DragonBones) sang Cocos Creator 3.8.7. 1 scene `assets/scene/Main.scene` (Canvas + node App/FLGameApp); mọi màn/UI dựng bằng code từ atlas.
+Stack: Cocos 3.8.7 + TS + Box2D builtin (step thủ công) + DragonBones runtime | Run: Editor preview http://localhost:7456 | Typecheck: `npx -y -p typescript@5.4.5 tsc --noEmit -p .` (lọc `^assets/`)
 
 ## Where things are
 | Area | Path | Notes |
 |---|---|---|
-| Gameplay | assets/scripts/gameplay | MatchController (timer/score/phase), BallController, PlayerController |
-| Common | assets/scripts/common | GameTypes (enum), GameEvents (tên event), BroadcastReceiver (event bus) |
-| Managers | assets/scripts/managers | NetworkManager (WS+HTTP, chưa được dùng), AssetLoader, PhysicsDebug2D |
-| i18n | assets/scripts/i18n | LocalizationManager + LocalizedLabel/Sprite |
-| UI | assets/scripts/ui | UiPopup (show/hide anim), NumberScrolling |
-| Assets | assets/resources/{fonts,images,sound} | scene: assets/scene/Game.scene |
-| Docs thiết kế | .cursor/docs | GDD, MODULES, ARCHITECTURE, features/F00x, CHANGELOG (nguồn spec) |
-| Tool | mark-review-done.mjs | tick checklist feature trong .cursor/docs (`npm run review:done`) |
-| MCP plugin | extensions/funplay-cocos-mcp | extension bên thứ 3 (untracked), KHÔNG phải code game |
+| App shell | assets/scripts/fl/app | FLGameApp, ScreenManager (fade 325ms), Res (atlas/DB/audio), UIKit, Sfx, Storage(fb21_pk+hash), Inventory (mode/team/tournament), MatchData, PlayersData (CLB, skin), Features (ẩn/hiện mode) |
+| Screens | assets/scripts/fl/screens | Preloader, Menu/Menu2 (MenuScreen.ts), RandomState (chọn team/mode), PostMatch, Tournament*, PreMatch, FinalTournament, TournamentUI |
+| Gameplay | assets/scripts/fl/game | GameplayScreen, GameCore (fixed 40Hz, slow, goal, timer), Physics (PhysBody API kiểu Phaser), BallObject, PlayerObject, PlayerView (DragonBones/placeholder), Controllers (phím), AIController2 (bot), GameBuilder, Hud, GameConsts |
+| Assets | assets/resources/{images,dragonbones,sound,fonts} | atlas plist interface/gameplay (offset trim đã sửa), DB player_ske/tex |
+| Spec gốc | .cursor/docs/ORIGINAL_SPEC.md | nguồn sự thật: số liệu, toạ độ Phaser, AI, luật |
+| Plan port | .cursor/docs/PORT_PLAN.md | kiến trúc + phases |
+| Game gốc | C:\Users\hoang\Downloads\FootballLegends | serve `python -m http.server 8090` để so sánh |
+| MCP plugin | extensions/funplay-cocos-mcp | third-party, profile full (funplay-cocos-mcp.config.json) |
 
-## Entry points
-- assets/scripts/gameplay/MatchController.ts — gắn vào scene, điều phối phiên đấu
-- assets/scene/Game.scene — scene duy nhất (không đọc cả file)
-
-## Key flows (details: ARCHITECTURE.md#flows)
-- Goal: Ball sensor → MatchController.onGoalSensorHit → score++ → GoalPause 1.5s → kickoff → MATCH_KICKOFF
-- FullTime: matchElapsed ≥ 90 → MatchPhase.FullTime → MATCH_END
+## Key flows (details: ARCHITECTURE.md)
+- Menu → 1 PLAYER → (Menu2 bị skip nếu chỉ 1 mode) → RandomState → PLAY → Gameplay → PostMatch
+- Tick: accumulator STEP 0.025 → physics.step(0.9*t) → objects.update(t) → contact callbacks set vận tốc trực tiếp (nape style)
 
 ## Conventions
-- Component Cocos: `@ccclass('Name')` + `@property` có tooltip tiếng Việt; ref `| null`, validate trong onLoad.
-- Event: `BroadcastReceiver.send(GAME_EVENTS.X, payload)`; tên event khai báo ở common/GameEvents.ts, enum/type ở GameTypes.ts.
-- Side: Human=+1 (sút sang phải, GoalRight→T_1), Bot=-1. Score T_1=human, T_2=đối thủ.
-- Comment/tooltip bằng tiếng Việt. Thông số gameplay là const đầu file.
+- Toạ độ logic Phaser (x→, y↓, world 800x480). `P2C(x,y)=(x-400,240-y)`; PhysBody.px/py/vx/vy đã ở hệ Phaser. Box2D raw m/s (1m=32px).
+- Hằng số gameplay ở GameConsts.ts, copy đúng số từ spec. ccclass mới prefix `FL`. Comment tiếng Việt.
+- Ẩn/hiện mode: chỉ sửa `fl/app/Features.ts`.
+- Sau khi sửa script từ ngoài: refresh asset-db `db://assets/scripts/fl` rồi mới test preview.
 
 ## Don't touch / generated
-- library/ temp/ local/ build/ profiles/ *.meta, *.scene/*.prefab (JSON lớn)
+- library/ temp/ local/ build/ profiles/ *.meta, *.scene/*.prefab
 - extensions/funplay-cocos-mcp (third-party)
 
 ## Where to find X
-- "thêm event mới" → GameEvents.ts + payload type trong GameTypes.ts
-- "thêm popup" → copy pattern ui/popup/UiPopup.ts
-- "thêm state cầu thủ" → IState (GameTypes.ts) + PlayerController
-- "text đa ngôn ngữ" → i18n/LocalizedLabel.ts
-- Spec feature → .cursor/docs/features/Fxxx
+- thông số vật lý/sút/nhảy → game/GameConsts.ts (+ spec §3)
+- bot → game/AIController2.ts (spec §7)
+- super shot Fireball/Teleport → game/PlayerObject.ts (superHit/superDefence), BallObject.ts
+- HUD/pause → game/Hud.ts, GameplayScreen.ts
+- tournament logic → app/Inventory.ts; UI → screens/Tournament*.ts
+- skin cầu thủ → app/PlayersData.ts
