@@ -1,6 +1,6 @@
 /** Bật/tắt mode theo phiên bản build. */
 export const Features = {
-    quickMatch: true,   // nút QUICK MATCH ở Menu
+    quickMatch: false,   // nút QUICK MATCH ở Menu
     twoPlayers: false,   // nút 2 PLAYERS ở Menu
     tournament: false,   // nút TOURNAMENT ở Menu2
     friendly: true,      // nút FRIENDLY ở Menu2

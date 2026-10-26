@@ -4,6 +4,7 @@ import { UIKit } from '../app/UIKit';
 import { P2C } from '../app/Coords';
 import { Inventory } from '../app/Inventory';
 import { MatchData } from '../app/MatchData';
+import { NetworkManager } from '../app/NetworkManager';
 import { MusicButton } from '../app/MusicButton';
 import { PlayersData } from '../app/PlayersData';
 import { ScreenManager } from '../app/ScreenManager';
@@ -21,6 +22,12 @@ export class PostMatchScreen extends FLScreen {
 
     build(): void {
         const s1 = MatchData.score1, s2 = MatchData.score2;
+        // Gửi điểm khi kết thúc trận: score = số bàn của người chơi (đội trái, T_1)
+        NetworkManager.instance.httpPost("/saveScore", {
+            "username": Inventory.userName,
+            "score": s1,
+            "time": MatchData.sessionTimeSeconds
+        });
         const t1 = Inventory.teams[0] - 1, t2 = Inventory.teams[1] - 1;
         const tournament = Inventory.gameMode === 0 && !Inventory.isQuickMatch;
         buildPlaygroundBg(this.root);

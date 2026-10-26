@@ -30,7 +30,9 @@ export class Inventory {
     static botSkill = 0.2;
     /** Index CLB gần nhất (0-based) */
     static team = 0;
-    static tsave: TournamentSave | null = null;
+    /** Tên user lấy từ API /login (không lưu vào save). */
+    static userName = '';
+    static tsave:TournamentSave | null = null;
     static tsave2: TournamentSave | null = null;
     static stats: any = { t0: 0, t1: 0, t2: 0, goals: 0 };
 

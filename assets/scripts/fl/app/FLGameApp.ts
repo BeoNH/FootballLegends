@@ -3,6 +3,7 @@ import { Res } from './Res';
 import { ScreenManager } from './ScreenManager';
 import { Sfx } from './Sfx';
 import { Inventory } from './Inventory';
+import { NetworkManager, urlParam } from './NetworkManager';
 import { PreloaderScreen } from '../screens/PreloaderScreen';
 import { MenuScreen, Menu2Screen } from '../screens/MenuScreen';
 import { RandomStateScreen } from '../screens/RandomStateScreen';
@@ -31,7 +32,7 @@ export class FLGameApp extends Component {
         ScreenManager.register('Gameplay', GameplayScreen);
     }
 
-    protected start(): void {
+    protected async start(): Promise<void> {
         Sfx.init();
         Inventory.load();
         ScreenManager.go('Preloader');
@@ -40,6 +41,11 @@ export class FLGameApp extends Component {
             Sfx.startMusic();
             ScreenManager.go('Menu');
         });
+        // Đăng nhập bằng token trên URL (không chặn luồng load)
+        const login = await NetworkManager.instance.httpPost("/login", { token: urlParam("token") });
+        if (login) {
+            Inventory.userName = login?.username;
+        }
     }
 
     protected update(dt: number): void {

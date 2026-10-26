@@ -1,4 +1,4 @@
-# FootballLegends — map
+﻿# FootballLegends — map
 Port 1:1 game web "Football Legends" (Phaser 2 + nape + DragonBones) sang Cocos Creator 3.8.7. 1 scene `assets/scene/Main.scene` (Canvas + node App/FLGameApp); mọi màn/UI dựng bằng code từ atlas.
 Stack: Cocos 3.8.7 + TS + Box2D builtin (step thủ công) + DragonBones runtime | Run: Editor preview http://localhost:7456 | Typecheck: `npx -y -p typescript@5.4.5 tsc --noEmit -p .` (lọc `^assets/`)
 
@@ -9,10 +9,13 @@ Stack: Cocos 3.8.7 + TS + Box2D builtin (step thủ công) + DragonBones runtime
 | Screens | assets/scripts/fl/screens | Preloader, Menu/Menu2 (MenuScreen.ts), RandomState (chọn team/mode), PostMatch, Tournament*, PreMatch, FinalTournament, TournamentUI |
 | Gameplay | assets/scripts/fl/game | GameplayScreen, GameCore (fixed 40Hz, slow, goal, timer), Physics (PhysBody API kiểu Phaser), BallObject, PlayerObject, PlayerView (DragonBones/placeholder), Controllers (phím), AIController2 (bot), GameBuilder, Hud, GameConsts |
 | Assets | assets/resources/{images,dragonbones,sound,fonts} | atlas plist interface/gameplay (offset trim đã sửa), DB player_ske/tex |
-| Spec gốc | .cursor/docs/ORIGINAL_SPEC.md | nguồn sự thật: số liệu, toạ độ Phaser, AI, luật |
-| Plan port | .cursor/docs/PORT_PLAN.md | kiến trúc + phases |
+| Spec gốc | .claude/docs/ORIGINAL_SPEC.md | nguồn sự thật: số liệu, toạ độ Phaser, AI, luật |
 | Game gốc | C:\Users\hoang\Downloads\FootballLegends | serve `python -m http.server 8090` để so sánh |
 | MCP plugin | extensions/funplay-cocos-mcp | third-party, profile full (funplay-cocos-mcp.config.json) |
+
+## Entry points
+- assets/scene/Main.scene — start scene (preview), node App gắn FLGameApp
+- assets/scripts/fl/app/FLGameApp.ts — đăng ký screens, Preloader → Menu, drive ScreenManager.update
 
 ## Key flows (details: ARCHITECTURE.md)
 - Menu → 1 PLAYER → (Menu2 bị skip nếu chỉ 1 mode) → RandomState → PLAY → Gameplay → PostMatch
