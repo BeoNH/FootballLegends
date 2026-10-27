@@ -5,7 +5,8 @@ Stack: Cocos 3.8.7 + TS + Box2D builtin (step thủ công) + DragonBones runtime
 ## Where things are
 | Area | Path | Notes |
 |---|---|---|
-| App shell | assets/scripts/fl/app | FLGameApp, ScreenManager (fade 325ms), Res (atlas/DB/audio), UIKit, Sfx, Storage(fb21_pk+hash), Inventory (mode/team/tournament), MatchData, PlayersData (CLB, skin), Features (ẩn/hiện mode) |
+| Entry | assets/scripts/FLGameApp.ts | component gốc trên node App; onLoad đăng ký các màn qua ScreenManager.registerAll |
+| App shell | assets/scripts/fl/app | ScreenManager (fade 325ms), Res (atlas/DB/audio), UIKit, Sfx, Storage(fb21_pk+hash), Inventory (mode/team/tournament), MatchData, PlayersData (CLB, skin), Features (ẩn/hiện mode) |
 | Screens | assets/scripts/fl/screens | Preloader, Menu/Menu2 (MenuScreen.ts), RandomState (chọn team/mode), PostMatch, Tournament*, PreMatch, FinalTournament, TournamentUI |
 | Gameplay | assets/scripts/fl/game | GameplayScreen, GameCore (fixed 40Hz, slow, goal, timer), Physics (PhysBody API kiểu Phaser), BallObject, PlayerObject, PlayerView (DragonBones/placeholder), Controllers (phím), TouchControls (nút cảm ứng, mobile), AIController2 (bot), GameBuilder, Hud, GameConsts |
 | Assets | assets/resources/{images,dragonbones,sound,fonts} | atlas plist interface/gameplay (offset trim đã sửa), DB player_ske/tex |
@@ -15,7 +16,7 @@ Stack: Cocos 3.8.7 + TS + Box2D builtin (step thủ công) + DragonBones runtime
 
 ## Entry points
 - assets/scene/Main.scene — start scene (preview), node App gắn FLGameApp
-- assets/scripts/fl/app/FLGameApp.ts — đăng ký screens, Preloader → Menu, drive ScreenManager.update
+- assets/scripts/FLGameApp.ts — registerAll({...}), Preloader → Menu, drive ScreenManager.update
 
 ## Key flows (details: ARCHITECTURE.md)
 - Menu → 1 PLAYER → (Menu2 bị skip nếu chỉ 1 mode) → RandomState → PLAY → Gameplay → PostMatch
@@ -39,3 +40,8 @@ Stack: Cocos 3.8.7 + TS + Box2D builtin (step thủ công) + DragonBones runtime
 - HUD/pause → game/Hud.ts, GameplayScreen.ts
 - tournament logic → app/Inventory.ts; UI → screens/Tournament*.ts
 - skin cầu thủ → app/PlayersData.ts
+
+
+## Debug trực quan
+- Không dùng prefab màn hình: mọi màn dựng bằng code (UIKit), tên node rõ ràng (sidebar, content, gameObjects/players/ball, physics, gui).
+- Xem cây node runtime: chạy Preview in Editor → Hierarchy/Inspector hiện node thật, chỉnh vị trí trực tiếp để thử.

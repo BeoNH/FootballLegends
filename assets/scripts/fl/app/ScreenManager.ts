@@ -21,7 +21,7 @@ export class ScreenManager {
         ScreenManager.opacity = container.getComponent(UIOpacity) || container.addComponent(UIOpacity);
     }
 
-    static register(name: string, ctor: new () => FLScreen): void { ScreenManager.ctors[name] = ctor; }
+    static registerAll(screens: { [name: string]: new () => FLScreen }): void { Object.assign(ScreenManager.ctors, screens); }
 
     static get currentScreen(): FLScreen | null { return ScreenManager.current; }
 
