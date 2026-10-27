@@ -44,7 +44,7 @@ export class PlayersData {
         const set = (slot: string, anim: string) => {
             const s = arm.getSlot(slot);
             const child = s && s.childArmature;
-            if (child) child.animation.gotoAndPlay(anim, 0);
+            if (child) child.animation.play(anim);
         };
         set('head', 'head' + (idx + 1));
         set('body', 'body' + (body + 1));
@@ -52,7 +52,7 @@ export class PlayersData {
         set('right hand', 'hand' + HANDS[idx]);
         set('left leg', PlayersData.legs[idx]);
         set('right leg', PlayersData.legs[idx]);
-        arm.animation.gotoAndPlay('idle');
+        arm.animation.play('idle');
         arm.advanceTime(1 / 60);
     }
 }

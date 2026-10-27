@@ -1,3 +1,11 @@
+import { sys } from 'cc';
+
+/** Bật true để test giao diện mobile trên PC/editor. */
+export const FORCE_MOBILE_UI = false;
+
+/** Giao diện điều khiển cảm ứng (nút ảo + HUD dời chỗ). */
+export function isMobileUI(): boolean { return FORCE_MOBILE_UI || sys.isMobile; }
+
 /** Bật/tắt mode theo phiên bản build. */
 export const Features = {
     quickMatch: false,   // nút QUICK MATCH ở Menu

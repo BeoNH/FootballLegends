@@ -1,3 +1,4 @@
+import { isMobileUI } from '../app/Features';
 import { Inventory } from '../app/Inventory';
 import { UIKit } from '../app/UIKit';
 import { AIController2 } from './AIController2';
@@ -48,8 +49,10 @@ export function buildGame(core: FootballGameCore): void {
 
     // ---- Stands: ảnh phím hint tại world (200,0), (600,0), anchor (.5,0) ----
     const np = Inventory.numPlayers;
-    UIKit.sprite(L.back, 'help000' + 2 * np, cx(200), cy(0), 0.5, 1);
-    UIKit.sprite(L.back, 'help000' + (2 * np + 1), cx(600), cy(0), 0.5, 1);
+    if (!isMobileUI()) { // mobile: không có phím vật lý, bỏ ảnh hint
+        UIKit.sprite(L.back, 'help000' + 2 * np, cx(200), cy(0), 0.5, 1);
+        UIKit.sprite(L.back, 'help000' + (2 * np + 1), cx(600), cy(0), 0.5, 1);
+    }
 
     core.countDown = new CountDownObject(L.ball);
     core.messageInfo = new MessageInfo(L.ball);

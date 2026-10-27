@@ -44,6 +44,17 @@ export class Keys {
         Keys.down[e.keyCode] = false;
     }
 
+    /** Phím ảo (nút cảm ứng): hành xử y hệt phím vật lý down/up. */
+    static setVirtual(code: number, down: boolean): void {
+        if (down) {
+            const was = Keys.down[code];
+            Keys.down[code] = true;
+            if (!was) for (const h of Keys.pressHandlers.slice()) h(code);
+        } else {
+            Keys.down[code] = false;
+        }
+    }
+
     static isDown(code: number): boolean { return !!Keys.down[code]; }
 
     /** Đăng ký callback khi một phím vừa được nhấn (không lặp). */

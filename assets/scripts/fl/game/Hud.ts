@@ -1,4 +1,5 @@
 import { BlockInputEvents, Color, Label, Node, Sprite, tween, Tween, UITransform, Vec2, Vec3 } from 'cc';
+import { isMobileUI } from '../app/Features';
 import { MusicButton } from '../app/MusicButton';
 import { Res } from '../app/Res';
 import { Sfx } from '../app/Sfx';
@@ -11,6 +12,10 @@ import { CLUB_NAMES, emblemHud, emblemPopup, SUPER_SHOT_PTS, T_KOEF, TIMER } fro
  */
 const hx = (x: number) => x - 400;
 const hy = (y: number) => 240 - y;
+
+/** Mobile: InfoPanel ở giữa-trên (chỗ ảnh help cũ), timer ngay dưới (toạ độ Phaser, tinh chỉnh tại đây). */
+export const MOBILE_INFO_Y = 38;
+export const MOBILE_TIMER_Y = 92;
 
 function setFrame(sp: Sprite, name: string): void {
     const f = Res.frame(name);
@@ -26,7 +31,7 @@ export class InfoPanel {
     private score2: Label;
 
     constructor(parent: Node) {
-        this.node = UIKit.node(parent, 'InfoPanel', hx(400), hy(458));
+        this.node = UIKit.node(parent, 'InfoPanel', hx(400), hy(isMobileUI() ? MOBILE_INFO_Y : 458));
         UIKit.sprite(this.node, 'infoPanel0000', -2, 10);
         this.score1 = UIKit.label(this.node, '', 'calibri48', -9, 8, 1, 0.5);
         this.score2 = UIKit.label(this.node, '', 'calibri48', 5, 8, 0, 0.5);
@@ -61,7 +66,7 @@ export class TimerObject {
     private wasEnd = false;
 
     constructor(parent: Node, private onEnd: () => void) {
-        this.label = UIKit.label(parent, '', 'calibri48', hx(400), hy(50));
+        this.label = UIKit.label(parent, '', 'calibri48', hx(400), hy(isMobileUI() ? MOBILE_TIMER_Y : 50));
     }
 
     start(t: number, e: number): void {
@@ -184,8 +189,10 @@ export class EnergyBar {
         this.gray.type = Sprite.Type.FILLED;
         this.gray.fillType = Sprite.FillType.RADIAL;
         this.gray.fillCenter = new Vec2(0.5, 0.5);
-        const hint = UIKit.sprite(this.node, 'key_hint0000', -30, -30);
-        UIKit.label(hint.node, id === 1 ? 'Z' : id === 2 ? 'V' : 'K', 'calibri16_black');
+        if (!isMobileUI()) {
+            const hint = UIKit.sprite(this.node, 'key_hint0000', -30, -30);
+            UIKit.label(hint.node, id === 1 ? 'Z' : id === 2 ? 'V' : 'K', 'calibri16_black');
+        }
         this.setEnergy(0);
     }
 

@@ -41,7 +41,7 @@ export class FinalTournamentScreen extends FLScreen {
             if (isMe) PlayersData.switchPlayer(d, 2 * (me - 1) + (mine - 1), 0);
             else PlayersData.switchPlayer(d, 2 * (teamNo - 1), 1);
             const a = d && d.armature();
-            if (a) a.animation.gotoAndPlay(anim);
+            if (a) a.animation.play(anim);
             return d;
         };
         // hạng 1 (-6,-93), hạng 2 (-97,-77), hạng 3 (97,-70) trong tribune; tribune có gốc tại (0,-443) trong group

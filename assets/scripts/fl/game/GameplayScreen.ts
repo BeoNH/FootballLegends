@@ -1,5 +1,5 @@
 import { KeyCode, Node } from 'cc';
-import { backToModeMenu } from '../app/Features';
+import { backToModeMenu, isMobileUI } from '../app/Features';
 import { Inventory } from '../app/Inventory';
 import { MatchData } from '../app/MatchData';
 import { ScreenManager } from '../app/ScreenManager';
@@ -9,6 +9,7 @@ import { Keys } from './Controllers';
 import { FinishType, FootballGameCore } from './GameCore';
 import { GameLayers } from './GameTypes';
 import { PausePopup, TopRightButtons } from './Hud';
+import { TouchControls } from './TouchControls';
 
 /** Chuyển màn có kiểm tra đã register (ScreenManager.go không báo lỗi sớm). Thiếu -> 'Menu'. */
 function goSafe(name: string, params?: any): void {
@@ -25,6 +26,7 @@ export class GameplayScreen extends FLScreen {
     private core: FootballGameCore | null = null;
     private topRight: TopRightButtons | null = null;
     private popup: PausePopup | null = null;
+    private touch: TouchControls | null = null; // chỉ mobile
     private gw = 800;
     private onKeyPress = (code: number) => this.handleKey(code);
 
@@ -51,6 +53,7 @@ export class GameplayScreen extends FLScreen {
         core.init();
 
         this.topRight = new TopRightButtons(gui, this.gw / fit, () => this.pause());
+        if (isMobileUI()) this.touch = new TouchControls(gui, core, this.gw / fit);
     }
 
     update(dt: number): void {
@@ -61,6 +64,7 @@ export class GameplayScreen extends FLScreen {
             this.gw = gw;
             const fit = Math.min(1, gw / 800);
             this.topRight?.layout(gw / fit);
+            this.touch?.layout(gw / fit);
         }
         core.frame(dt);
     }
@@ -72,6 +76,7 @@ export class GameplayScreen extends FLScreen {
         core.isPlaying = false;
         core.isPaused = true;
         this.topRight?.setPauseVisible(false);
+        this.touch?.setVisible(false);
         this.popup = new PausePopup(this.root.getChildByName('gui') as Node, Inventory.teams, MatchData.score1, MatchData.score2,
             () => this.back(), () => this.resume());
     }
@@ -83,6 +88,7 @@ export class GameplayScreen extends FLScreen {
         this.popup.destroy();
         this.popup = null;
         this.topRight?.setPauseVisible(true);
+        this.touch?.setVisible(true);
         core.resumeFromPause();
     }
 
@@ -118,6 +124,8 @@ export class GameplayScreen extends FLScreen {
 
     onExit(): void {
         Keys.offPress(this.onKeyPress);
+        this.touch?.destroy();
+        this.touch = null;
         if (this.core) {
             this.core.finished = true;
             this.core.release();

@@ -7,7 +7,7 @@ Stack: Cocos 3.8.7 + TS + Box2D builtin (step thủ công) + DragonBones runtime
 |---|---|---|
 | App shell | assets/scripts/fl/app | FLGameApp, ScreenManager (fade 325ms), Res (atlas/DB/audio), UIKit, Sfx, Storage(fb21_pk+hash), Inventory (mode/team/tournament), MatchData, PlayersData (CLB, skin), Features (ẩn/hiện mode) |
 | Screens | assets/scripts/fl/screens | Preloader, Menu/Menu2 (MenuScreen.ts), RandomState (chọn team/mode), PostMatch, Tournament*, PreMatch, FinalTournament, TournamentUI |
-| Gameplay | assets/scripts/fl/game | GameplayScreen, GameCore (fixed 40Hz, slow, goal, timer), Physics (PhysBody API kiểu Phaser), BallObject, PlayerObject, PlayerView (DragonBones/placeholder), Controllers (phím), AIController2 (bot), GameBuilder, Hud, GameConsts |
+| Gameplay | assets/scripts/fl/game | GameplayScreen, GameCore (fixed 40Hz, slow, goal, timer), Physics (PhysBody API kiểu Phaser), BallObject, PlayerObject, PlayerView (DragonBones/placeholder), Controllers (phím), TouchControls (nút cảm ứng, mobile), AIController2 (bot), GameBuilder, Hud, GameConsts |
 | Assets | assets/resources/{images,dragonbones,sound,fonts} | atlas plist interface/gameplay (offset trim đã sửa), DB player_ske/tex |
 | Spec gốc | .claude/docs/ORIGINAL_SPEC.md | nguồn sự thật: số liệu, toạ độ Phaser, AI, luật |
 | Game gốc | C:\Users\hoang\Downloads\FootballLegends | serve `python -m http.server 8090` để so sánh |
@@ -25,6 +25,7 @@ Stack: Cocos 3.8.7 + TS + Box2D builtin (step thủ công) + DragonBones runtime
 - Toạ độ logic Phaser (x→, y↓, world 800x480). `P2C(x,y)=(x-400,240-y)`; PhysBody.px/py/vx/vy đã ở hệ Phaser. Box2D raw m/s (1m=32px).
 - Hằng số gameplay ở GameConsts.ts, copy đúng số từ spec. ccclass mới prefix `FL`. Comment tiếng Việt.
 - Ẩn/hiện mode: chỉ sửa `fl/app/Features.ts`.
+- Mobile UI: Features.isMobileUI() (FORCE_MOBILE_UI để test trên PC)
 - Sau khi sửa script từ ngoài: refresh asset-db `db://assets/scripts/fl` rồi mới test preview.
 
 ## Don't touch / generated
