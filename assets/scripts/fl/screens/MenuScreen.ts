@@ -10,6 +10,7 @@ import { PlayersData } from '../app/PlayersData';
 import { MatchData } from '../app/MatchData';
 import { Features, isMenu2Skipped } from '../app/Features';
 import { buildWarningPopup } from './TournamentUI';
+import { HistoryPopup, ListPopup, RankPopup } from './ListPopup';
 
 /** Nền sân (PlaygroundUI): bg 1400x480 đặt giữa + 2 khung thành (Goals0000 112x145, anchor trái-trên như Phaser). */
 export function buildPlaygroundBg(root: Node): void {
@@ -114,9 +115,26 @@ export abstract class MenuBase extends FLScreen {
 
 
 export class MenuScreen extends MenuBase {
+    /** Thêm RANK / HISTORY (xanh lá, 2/3 nút PLAY) ngay dưới cột nút sidebar + 2 popup đè lên trên cùng. */
+    build(): void {
+        super.build();
+        const side = this.root.getChildByName('sidebar')!;
+        const n = this.buttons().length;
+        const lastY = (n - 1) * 40 - 80 * (n - 1);
+        const x = sidebarX();
+        const rank = new RankPopup(this.root);
+        const hist = new HistoryPopup(this.root);
+        const add = (text: string, y: number, pop: ListPopup) => {
+            UIKit.button(side, { skin: 'green', w: 150, h: 74, text, style: 'calibri30', x, y }, () => pop.open());
+            pop.init();
+        };
+        add('RANK', lastY - 80, rank);
+        add('HISTORY', lastY - 160, hist);
+    }
+
     protected buttons() {
         const b: { text: string; skin: 'yellow' | 'blue'; click: () => void }[] = [
-            { text: '1 PLAYER', skin: 'yellow', click: () => this.chooseMode(0) },
+            { text: 'PLAYER', skin: 'yellow', click: () => this.chooseMode(0) },
         ];
         if (Features.twoPlayers) b.push({ text: '2 PLAYERS', skin: 'yellow', click: () => this.chooseMode(1) });
         if (Features.quickMatch) b.push({ text: 'QUICK MATCH', skin: 'blue', click: () => { Inventory.initQuickMatch(); ScreenManager.go('Gameplay'); } });

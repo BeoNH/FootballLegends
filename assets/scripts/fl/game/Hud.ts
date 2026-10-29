@@ -269,7 +269,7 @@ export class PausePopup {
         UIKit.label(this.node, CLUB_NAMES[teams[1] - 1] || '', 'calibri20', 140, 10);
         UIKit.sprite(this.node, emblemPopup(teams[0]), -140, 60);
         UIKit.sprite(this.node, emblemPopup(teams[1]), 140, 60);
-        UIKit.button(this.node, { skin: 'blue', w: 192, h: 76, text: 'BACK', style: 'calibri30', x: -100, y: -120 }, onBack);
+        UIKit.button(this.node, { skin: 'blue', w: 192, h: 76, text: 'HOME', style: 'calibri30', x: -100, y: -120 }, onBack);
         UIKit.button(this.node, { skin: 'yellow', w: 192, h: 76, text: 'RESUME', style: 'calibri30', x: 100, y: -120 }, onResume);
     }
 

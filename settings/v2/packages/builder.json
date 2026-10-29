@@ -4,5 +4,22 @@
     "logo": {
       "type": "none"
     }
+  },
+  "textureCompressConfig": {
+    "userPreset": {
+      "webp": {
+        "name": "WebP (web)",
+        "options": {
+          "web": {
+            "webp": {
+              "quality": 80
+            },
+            "png": {
+              "quality": 80
+            }
+          }
+        }
+      }
+    }
   }
 }

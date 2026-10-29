@@ -1,5 +1,5 @@
 import { KeyCode, Node } from 'cc';
-import { backToModeMenu, isMobileUI } from '../app/Features';
+import { isMobileUI } from '../app/Features';
 import { Inventory } from '../app/Inventory';
 import { MatchData } from '../app/MatchData';
 import { ScreenManager } from '../app/ScreenManager';
@@ -92,14 +92,14 @@ export class GameplayScreen extends FLScreen {
         core.resumeFromPause();
     }
 
-    /** BACK trong pause -> Quick ? Menu : Menu2 (không confirm). */
+    /** HOME trong pause -> luôn về Menu (không confirm). */
     back(): void {
         const core = this.core;
         if (!core) return;
         core.finished = true;
         core.isPaused = true;
         if (this.popup) { this.popup.destroy(); this.popup = null; }
-        goSafe(Inventory.isQuickMatch ? 'Menu' : backToModeMenu());
+        goSafe('Menu');
     }
 
     private handleKey(code: number): void {

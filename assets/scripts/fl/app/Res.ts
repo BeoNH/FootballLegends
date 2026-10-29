@@ -39,7 +39,7 @@ export class Res {
         Res._interface = await step(Res.one('images/interface', SpriteAtlas));
         Res._gameplay = await step(Res.one('images/gameplay', SpriteAtlas));
         Res._font = await step(Res.one('fonts/Calibri-Bold', Font));
-        for (const n of ['0bg_0xs', 'logo_mad']) {
+        for (const n of ['0bg_0xs', 'logo_mad', 'medal', 'popup_row']) {
             const sf = await Res.one(`images/${n}/spriteFrame`, SpriteFrame);
             if (sf) Res._singles[n] = sf;
         }

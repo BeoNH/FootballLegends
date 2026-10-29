@@ -12,8 +12,8 @@ import { ScreenManager } from '../app/ScreenManager';
 import { buildPlaygroundBg } from './MenuScreen';
 
 const TEAMS_COUNT = 24;
-const LEFT_SHADOW_X = -72;
-const RIGHT_SHADOW_X = 88;
+/** Cầu thủ + bóng đổ nằm giữa 2 vị trí cũ (-72 / 88). */
+const SHADOW_X = 8;
 
 /** Slice anchor trái-trên (như createNineSlice không set anchor): toạ độ Phaser (tlx,tly) -> tâm Cocos. */
 function boxTL(parent: Node, skin: Skin, w: number, h: number, tlx: number, tly: number): Sprite {
@@ -24,13 +24,11 @@ function boxTL(parent: Node, skin: Skin, w: number, h: number, tlx: number, tly:
 export class SelectPlayer {
     node: Node;
     emblem = 1;
-    private player = 0;
-    private arm1: dragonBones.ArmatureDisplay | null = null;
-    private arm2: dragonBones.ArmatureDisplay | null = null;
+    private arm: dragonBones.ArmatureDisplay | null = null;
     private shadow1: Node;
-    private shadow2: Node;
     private label1: Label;
-    private label2: Label;
+    private fxIcon: Sprite;
+    private fxName: Label;
     private emblemSp: Sprite;
     private clubName: Label;
 
@@ -43,19 +41,16 @@ export class SelectPlayer {
             s.node.setScale(1.5, 1.5, 1);
             return s.node;
         };
-        sh('ShadowMC0000', LEFT_SHADOW_X); sh('ShadowMC0000', RIGHT_SHADOW_X);
-        this.shadow1 = sh('ShadowMC_or0000', LEFT_SHADOW_X);
-        this.shadow2 = sh('ShadowMC_pi0000', RIGHT_SHADOW_X);
+        sh('ShadowMC0000', SHADOW_X);
+        this.shadow1 = sh('ShadowMC_or0000', SHADOW_X);
         if (showArrows) {
             UIKit.iconButton(n, 'btn_blue_arrow0000', -89, -14, -1, () => this.changeTeam(-1));
             UIKit.iconButton(n, 'btn_blue_arrow0000', 89, -14, 1, () => this.changeTeam(1));
         }
-        boxTL(n, 'yellow', 160, 54, -157, 228);
-        boxTL(n, 'yellow', 160, 54, 3, 228);
-        const i1 = UIKit.sprite(n, 'icon_ball0000', -120, -253); i1.node.setScale(0.6, 0.6, 1);
-        const i2 = UIKit.sprite(n, 'icon_ball0001', 39, -253); i2.node.setScale(0.6, 0.6, 1);
-        UIKit.label(n, 'Fireball', 'calibri20_blue', -63, -252);
-        UIKit.label(n, 'Teleport', 'calibri20_blue', 98, -252);
+        // 1 ô hiệu ứng ở giữa, đổi theo cầu thủ random (showPlayer)
+        boxTL(n, 'yellow', 160, 54, SHADOW_X - 80, 228);
+        this.fxIcon = UIKit.sprite(n, 'icon_ball0000', SHADOW_X - 43, -253); this.fxIcon.node.setScale(0.6, 0.6, 1);
+        this.fxName = UIKit.label(n, 'Fireball', 'calibri20_blue', SHADOW_X + 14, -252);
 
         // Team mặc định: P1 = team đã lưu + 1; P2 giữ team cũ nếu hợp lệ và khác P1
         const teams = Inventory.teams;
@@ -69,57 +64,29 @@ export class SelectPlayer {
         this.emblemSp = UIKit.sprite(n, PlayersData.emblemFrame(this.emblem - 1), 0, -10);
         this.clubName = UIKit.label(n, PlayersData.clubName(this.emblem - 1), 'calibri26_yellow', 0, 45);
         UIKit.fitLabel(this.clubName, 130, 60);
-        this.label1 = UIKit.label(n, '', 'calibri16', -80, -64);
-        this.label2 = UIKit.label(n, '', 'calibri16', 80, -64);
+        this.label1 = UIKit.label(n, '', 'calibri16', SHADOW_X, -64);
 
-        // 2 cầu thủ: armature scale .65, chân tại (-72.5,217.5) và (87.5,217.5)
-        this.arm1 = PlayersData.createPlayer(n, -72.5, -217.5, 0.65);
-        this.arm2 = PlayersData.createPlayer(n, 87.5, -217.5, 0.65);
-        UIKit.zone(n, 90, 120, -72.5, -167.5, () => this.click1(), true);
-        UIKit.zone(n, 90, 120, 87.5, -167.5, () => this.click2(), true);
-        this.player = Inventory.players[id] | 0;
-        this.showPlayers();
+        // 1 cầu thủ duy nhất ở giữa panel (random 1 trong 2 cầu thủ của CLB)
+        this.arm = PlayersData.createPlayer(n, SHADOW_X, -217.5, 0.65);
+        this.showPlayer();
     }
 
-    /** t: 0 = 1 người (label "Player N"), 1 = 2 người cùng đội, 2 = đội CPU (không label). */
+    /** t: 0 = 1 người (label "Player N"), 1 = 2 người cùng đội (chỉ còn 1 cầu thủ -> như 0), 2 = đội CPU (không label). */
     setUp(t = 0): void {
-        const s = (lb: Label, v: boolean, text?: string) => { lb.node.active = v; if (text !== undefined) lb.string = text; };
-        if (t === 0) { s(this.label1, true, 'Player ' + (this.id + 1)); s(this.label2, false); this.shadow1.active = true; this.shadow2.active = false; }
-        else if (t === 1) { s(this.label1, true, 'Player 1'); s(this.label2, true, 'Player 2'); this.shadow1.active = true; this.shadow2.active = true; }
-        else { s(this.label1, false); s(this.label2, false); this.shadow1.active = true; this.shadow2.active = false; }
+        this.label1.node.active = t !== 2;
+        if (t !== 2) this.label1.string = 'Player ' + (t === 1 ? 1 : this.id + 1);
     }
 
-    private showPlayers(): void {
-        PlayersData.switchPlayer(this.arm1, 2 * this.emblem - 2, this.id);
-        PlayersData.switchPlayer(this.arm2, 2 * this.emblem - 1, this.id);
-        if (this.player === 2) { this.player = 0; this.click2(); } else { this.player = 0; this.click1(); }
-    }
-
-    private freeze(d: dragonBones.ArmatureDisplay | null): void {
-        const a = d && d.armature();
-        if (a) a.animation.gotoAndStopByTime('idle', 0);
-    }
-    private play(d: dragonBones.ArmatureDisplay | null): void {
-        const a = d && d.armature();
+    /** Random cầu thủ 1/2 của CLB hiện tại, ghi vào Inventory.players. */
+    private showPlayer(): void {
+        const p = Math.random() < 0.5 ? 1 : 2;
+        Inventory.players[this.id] = p;
+        PlayersData.switchPlayer(this.arm, 2 * this.emblem - 3 + p, this.id);
+        // skin chẵn (p=1) = Fireball, lẻ (p=2) = Teleport (PlayerObject.superPower)
+        this.fxIcon.spriteFrame = Res.frame(p === 1 ? 'icon_ball0000' : 'icon_ball0001') as SpriteFrame;
+        this.fxName.string = p === 1 ? 'Fireball' : 'Teleport';
+        const a = this.arm && this.arm.armature();
         if (a) a.animation.play('idle', -1);
-    }
-
-    private click1(): void {
-        if (this.player === 1) return;
-        this.play(this.arm1); this.freeze(this.arm2);
-        this.player = 1;
-        this.shadow1.setPosition(LEFT_SHADOW_X, -220, 0); this.shadow2.setPosition(RIGHT_SHADOW_X, -220, 0);
-        this.label1.node.setPosition(-78, -64, 0); this.label2.node.setPosition(78, -64, 0);
-        Inventory.players[this.id] = 1;
-    }
-
-    private click2(): void {
-        if (this.player === 2) return;
-        this.play(this.arm2); this.freeze(this.arm1);
-        this.player = 2;
-        this.shadow1.setPosition(RIGHT_SHADOW_X, -220, 0); this.shadow2.setPosition(LEFT_SHADOW_X, -220, 0);
-        this.label1.node.setPosition(78, -64, 0); this.label2.node.setPosition(-78, -64, 0);
-        Inventory.players[this.id] = 2;
     }
 
     /** Mũi tên đổi team: vòng 1..24, tránh trùng team bên kia (nhảy thêm 1 bước). */
@@ -134,7 +101,7 @@ export class SelectPlayer {
         Inventory.teams[this.id] = this.emblem;
         this.emblemSp.spriteFrame = Res.frame(PlayersData.emblemFrame(this.emblem - 1)) as SpriteFrame;
         this.clubName.string = PlayersData.clubName(this.emblem - 1);
-        this.showPlayers();
+        this.showPlayer();
         this.onChanged();
     }
 }

@@ -2,7 +2,7 @@
   "ver": "1.0.27",
   "importer": "image",
   "imported": true,
-  "uuid": "bf76826b-7920-47cf-877b-169610fcff57",
+  "uuid": "2c5ab04d-863b-4bf1-ab70-c4ead9ee751c",
   "files": [
     ".json",
     ".png"
@@ -10,14 +10,14 @@
   "subMetas": {
     "6c48a": {
       "importer": "texture",
-      "uuid": "bf76826b-7920-47cf-877b-169610fcff57@6c48a",
-      "displayName": "texture",
+      "uuid": "2c5ab04d-863b-4bf1-ab70-c4ead9ee751c@6c48a",
+      "displayName": "medal",
       "id": "6c48a",
       "name": "texture",
       "userData": {
         "wrapModeS": "clamp-to-edge",
         "wrapModeT": "clamp-to-edge",
-        "imageUuidOrDatabaseUri": "bf76826b-7920-47cf-877b-169610fcff57",
+        "imageUuidOrDatabaseUri": "2c5ab04d-863b-4bf1-ab70-c4ead9ee751c",
         "isUuid": true,
         "visible": false,
         "minfilter": "linear",
@@ -34,21 +34,21 @@
     },
     "f9941": {
       "importer": "sprite-frame",
-      "uuid": "bf76826b-7920-47cf-877b-169610fcff57@f9941",
-      "displayName": "texture",
+      "uuid": "2c5ab04d-863b-4bf1-ab70-c4ead9ee751c@f9941",
+      "displayName": "medal",
       "id": "f9941",
       "name": "spriteFrame",
       "userData": {
         "trimThreshold": 1,
         "rotated": false,
-        "offsetX": -2,
-        "offsetY": 187.5,
+        "offsetX": 0,
+        "offsetY": 0,
         "trimX": 0,
         "trimY": 0,
-        "width": 2044,
-        "height": 649,
-        "rawWidth": 2048,
-        "rawHeight": 1024,
+        "width": 36,
+        "height": 36,
+        "rawWidth": 36,
+        "rawHeight": 36,
         "borderTop": 0,
         "borderBottom": 0,
         "borderLeft": 0,
@@ -60,17 +60,17 @@
         "meshType": 0,
         "vertices": {
           "rawPosition": [
-            -1022,
-            -324.5,
+            -18,
+            -18,
             0,
-            1022,
-            -324.5,
+            18,
+            -18,
             0,
-            -1022,
-            324.5,
+            -18,
+            18,
             0,
-            1022,
-            324.5,
+            18,
+            18,
             0
           ],
           "indexes": [
@@ -83,37 +83,37 @@
           ],
           "uv": [
             0,
-            1024,
-            2044,
-            1024,
+            36,
+            36,
+            36,
             0,
-            375,
-            2044,
-            375
+            0,
+            36,
+            0
           ],
           "nuv": [
             0,
-            0.3662109375,
-            0.998046875,
-            0.3662109375,
             0,
             1,
-            0.998046875,
+            0,
+            0,
+            1,
+            1,
             1
           ],
           "minPos": [
-            -1022,
-            -324.5,
+            -18,
+            -18,
             0
           ],
           "maxPos": [
-            1022,
-            324.5,
+            18,
+            18,
             0
           ]
         },
         "isUuid": true,
-        "imageUuidOrDatabaseUri": "bf76826b-7920-47cf-877b-169610fcff57@6c48a",
+        "imageUuidOrDatabaseUri": "2c5ab04d-863b-4bf1-ab70-c4ead9ee751c@6c48a",
         "atlasUuid": "",
         "trimType": "auto"
       },
@@ -129,6 +129,10 @@
     "type": "sprite-frame",
     "hasAlpha": true,
     "fixAlphaTransparencyArtifacts": false,
-    "redirect": "bf76826b-7920-47cf-877b-169610fcff57@6c48a"
+    "redirect": "2c5ab04d-863b-4bf1-ab70-c4ead9ee751c@6c48a",
+    "compressSettings": {
+      "useCompressTexture": true,
+      "presetId": "webp"
+    }
   }
 }

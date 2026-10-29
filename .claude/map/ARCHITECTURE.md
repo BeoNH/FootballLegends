@@ -4,7 +4,8 @@
 ```mermaid
 flowchart LR
   Preloader --> Menu
-  Menu -->|1/2 PLAYER| Menu2
+  Menu -->|RANK/HISTORY| ListPopup
+  Menu -->|PLAYER / 2 PLAYERS| Menu2
   Menu -->|Menu2 skipped (Features)| RandomState
   Menu -->|QUICK MATCH| Gameplay
   Menu2 -->|FRIENDLY| RandomState
@@ -24,6 +25,16 @@ flowchart LR
 - `slow(n)`: 1→0.05 (teleport), 2→0.4, 3→0 freeze (fireball), khác→1. DragonBones view nhận `setGameTimeScale` (freeze = 0.9 đo theo bản gốc).
 - Va chạm: ball/player chỉ va GROUND/FLOOR; head sensor & goal sensor bắt ball; bounce sàn/mặt ngang set `vy=470` thủ công trong BEGIN_CONTACT. Goal xử lý sau step.
 - Timer: internal 60s (friendly/quick) hoặc 30s/hiệp (tournament), hiển thị round(x*1.5). Countdown 3-2-1-GO ~0.89s sau bàn/kickoff/resume.
+
+## External (backend portal)
+Base `https://<url_api>/game-service/api-minigame` (query `url_api`, `token` trên URL). NetworkManager.httpRequest gộp thêm toàn bộ URL params + `source`, `game_name` vào body; HTTP !ok/exception → `null`.
+| Path | Gọi ở | Body → Res |
+|---|---|---|
+| /login | FLGameApp.start | {token} → {username} |
+| /saveScore | PostMatchScreen.build | {username, score, time} |
+| /getRankList | ListPopup.ts RankPopup | {username} → {board[{name,numScore,numTime}], yourInfo{rank,name,numScore}} |
+| /getHistory | ListPopup.ts HistoryPopup | {username} → {history[{date ISO,numTime,numScore}]} |
+ListPopup: mỗi open() gọi lại API, `seq` bỏ response trễ, offline → 'OFFLINE'.
 
 ## Persistence
 localStorage `fb21_pk` (Inventory save: team, tsave/tsave2, stats) + `fb21_sfx_pk` (music/sfx), mỗi key kèm hash Java-style ở key+`h`.
